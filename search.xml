@@ -660,7 +660,7 @@
 <p>昨晚搞到半夜，终于搞定了Github Page，于是，重新上路。</p>
 ]]></content>
       <categories>
-        <category>码农搬砖</category>
+        <category>技术工具</category>
       </categories>
       <tags>
         <tag>博客</tag>
@@ -757,7 +757,7 @@
 <h3 id="写作很爽"><a href="#写作很爽" class="headerlink" title="写作很爽"></a>写作很爽</h3><p>Typora写作，很爽的，谁用谁知道。</p>
 ]]></content>
       <categories>
-        <category>码农搬砖</category>
+        <category>技术工具</category>
       </categories>
       <tags>
         <tag>博客</tag>
@@ -1153,7 +1153,7 @@
 <p><img src="https://laoqilife.oss-cn-beijing.aliyuncs.com/blog/timg" alt="![](images/timg-1589886309290)"></p>
 ]]></content>
       <categories>
-        <category>码农搬砖</category>
+        <category>技术工具</category>
       </categories>
       <tags>
         <tag>Blog</tag>
@@ -1396,6 +1396,28 @@
       <tags>
         <tag>新闻</tag>
         <tag>汉语</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>推荐一款不错的地图软件BIGEMAP</title>
+    <url>/2020/05/20/bigemap.html</url>
+    <content><![CDATA[<p>在国内的地图应用上，单就看地图和导航来说，百度地图和高德地图应该是不三选择。</p>
+<p>如果要看实景地图，非腾讯地图莫属。当初腾讯投入了大量的人力、车力和财力，搞了大中城市的实景地图，但实际证明，这个并不构成核心竞争力。</p>
+<p>如果要看卫星地图，那必须是Google Earth，但是会有经纬度偏移，影响体验和应用。</p>
+<a id="more"></a>
+<p>后来，很偶然机会发现了一款地图软件，叫做<a href="http://www.bigemap.com/" target="_blank" rel="noopener">BIGEMAP</a>，又称之为大地图。</p>
+<p>这是国内一家公司做的，看来是专门做地图的，包含了非常丰富的地图资源和地图应用工具，完整版的收费也比较高。但是对于一般的地图爱好者来说，免费版足矣。只是需要每个月在QQ群里找客服人员帮免费续一下授权。</p>
+<p>BIGEMAP整合了很多地图资源，特别对谷歌地图、Google Earth做了经纬度纠偏，所以使用它来看谷歌地图，体验非常好。</p>
+<p>对地图感兴趣的可以体验一下。</p>
+<p><img src="https://laoqilife.oss-cn-beijing.aliyuncs.com/blog/20200520215645.png" alt></p>
+<p>上图如来神掌在我国内蒙古静态，经纬度为(112 .0218694210,43 .7026798725)</p>
+]]></content>
+      <categories>
+        <category>技术工具</category>
+      </categories>
+      <tags>
+        <tag>地图</tag>
+        <tag>BIGEMAP</tag>
       </tags>
   </entry>
 </search>
