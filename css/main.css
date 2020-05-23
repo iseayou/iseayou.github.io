@@ -305,7 +305,7 @@ hr {
   background-image: repeating-linear-gradient(-45deg, #fff, #fff 4px, transparent 4px, transparent 8px);
 }
 blockquote {
-  padding: 10px 15px;
+  padding: 10px 15px 5px 15px;
   color: #666;
   border-left: 4px solid #ddd;
   background-color: #f1f1f1;
@@ -1831,7 +1831,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #40bdd0;
+  background: #ecbbff;
 }
 .links-of-blogroll {
   font-size: 13px;
