@@ -308,6 +308,7 @@ blockquote {
   padding: 0 15px;
   color: #666;
   border-left: 4px solid #ddd;
+  background-color: #dcdcdc;
 }
 blockquote cite::before {
   content: "-";
@@ -1330,7 +1331,7 @@ pre .javascript .function {
   box-sizing: border-box;
   margin: auto;
   padding: 3px;
-  border: 1px solid #ddd;
+  border: none;
 }
 .posts-expand .post-body .fancybox img {
   margin: 0 auto 25px;
@@ -1830,7 +1831,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #0fb0ff;
+  background: #14ff99;
 }
 .links-of-blogroll {
   font-size: 13px;
