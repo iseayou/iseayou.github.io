@@ -1813,6 +1813,7 @@
     <content><![CDATA[<p>Microsoft To Do是微软推出的一款效率清单工具，用来管理待办事项非常好用。</p>
 <p>但是平时都是科学上网，所以发现To Do客户端无法自动同步，找了一下原因，发现问题出在这里。</p>
 <p>只需要把IE浏览器的Internet 选项按照下图设置一下就可以了。</p>
+<a id="more"></a>
 <p><img src="https://laoqilife.oss-cn-beijing.aliyuncs.com/blog/20200525091645.png" alt></p>
 <p><img src="https://laoqilife.oss-cn-beijing.aliyuncs.com/blog/20200525091630.png" alt></p>
 ]]></content>
