@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地笔记记录</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#94a3b8',
+                        secondary: '#e2e8f0',
+                        accent: '#64748b',
+                        neutral: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .note-item {
+                @apply bg-white p-4 rounded-lg shadow-sm border border-secondary mb-3 transition-all duration-300;
+            }
+            .note-item:hover {
+                @apply shadow-md;
+            }
+            .btn {
+                @apply px-4 py-2 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50;
+            }
+            .btn-primary {
+                @apply bg-accent text-white hover:bg-opacity-90 focus:ring-accent;
+            }
+            .btn-danger {
+                @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+            }
+            .input-field {
+                @apply w-full p-3 border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        
+
+        <main>
+            <!-- 输入区域 -->
+            <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                <form id="noteForm" class="flex flex-col space-y-4">
+                    <div>
+                    
+                        <textarea 
+                            id="noteContent" 
+                            class="input-field" 
+                            rows="3" 
+                            placeholder="输入你想记录的内容..."
+                            required
+                        ></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button 
+                            type="submit" 
+                            id="submitBtn" 
+                            class="btn btn-primary"
+                        >
+                            <i class="fa fa-plus mr-1"></i> 添加记录
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 记录展示区域 -->
+            <section>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center space-x-3">
+                        <span id="noteCount" class="text-sm text-gray-500">共 0 条记录</span>
+                        <button 
+                            type="button" 
+                            id="copyAllBtn" 
+                            class="btn bg-blue-500 text-white hover:bg-blue-600 text-sm py-1"
+                        >
+                            <i class="fa fa-copy mr-1"></i> 复制
+                        </button>
+                        <button 
+                            type="button" 
+                            id="clearAllBtn" 
+                            class="btn btn-danger text-sm py-1"
+                        >
+                            <i class="fa fa-trash mr-1"></i> 清空
+                        </button>
+                    </div>
+                </div>
+                <div id="notesContainer" class="space-y-3">
+                    <!-- 笔记记录将在这里动态生成 -->
+                    <div class="text-center text-gray-500 py-8" id="emptyState">
+                        <i class="fa fa-book text-4xl mb-3"></i>
+                        <p>暂无记录，开始添加你的第一条笔记吧！</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="mt-12 text-center text-sm text-gray-500">
+            <p>本地笔记记录应用 &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const noteForm = document.getElementById('noteForm');
+            const noteContent = document.getElementById('noteContent');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const notesContainer = document.getElementById('notesContainer');
+            const noteCount = document.getElementById('noteCount');
+            const emptyState = document.getElementById('emptyState');
+            const copyAllBtn = document.getElementById('copyAllBtn');
+            
+            // 格式化日期时间函数
+            function formatDateTime(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+
+            // HTML转义函数，防止XSS攻击
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // 创建笔记元素函数
+            function createNoteElement(note) {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'note-item animate-fade-in';
+                
+                // 格式化时间
+                const date = new Date(note.timestamp);
+                const formattedDate = formatDateTime(date);
+                
+                noteDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-gray-800">${escapeHtml(note.content)}</p>
+                        </div>
+                        <button class="text-gray-400 hover:text-red-500 ml-3" 
+                                onclick="deleteNote(${note.id})"
+                                aria-label="删除笔记">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500 flex items-center">
+                        <i class="fa fa-clock-o mr-1"></i>
+                        <span>${formattedDate}</span>
+                    </div>
+                `;
+                
+                return noteDiv;
+            }
+            
+            // 加载笔记函数
+            function loadNotes() {
+                // 获取所有笔记
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                
+                // 更新笔记计数
+                noteCount.textContent = `共 ${notes.length} 条记录`;
+                
+                // 显示或隐藏空状态
+                if (notes.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                }
+                
+                // 清空容器
+                notesContainer.innerHTML = '';
+                
+                // 添加空状态元素
+                notesContainer.appendChild(emptyState);
+                
+                // 按时间正序排列（已经是正序，因为新笔记添加到数组末尾）
+                notes.forEach(note => {
+                    const noteElement = createNoteElement(note);
+                    notesContainer.appendChild(noteElement);
+                });
+            }
+            
+            // 添加笔记函数
+            function addNote() {
+                const content = noteContent.value.trim();
+                if (!content) return;
+
+                // 创建笔记对象
+                const note = {
+                    id: Date.now(),
+                    content: content,
+                    timestamp: new Date().toISOString()
+                };
+
+                // 获取现有笔记
+                let notes = JSON.parse(localStorage.getItem('notes')) || [];
+                
+                // 添加新笔记到数组末尾（时间正序）
+                notes.push(note);
+                
+                // 保存到本地存储
+                localStorage.setItem('notes', JSON.stringify(notes));
+                
+                // 清空输入框
+                noteContent.value = '';
+                
+                // 重新加载笔记
+                loadNotes();
+                
+                // 聚焦回输入框
+                noteContent.focus();
+            }
+            
+            // 删除笔记函数
+            window.deleteNote = function(id) {
+                if (confirm('确定要删除这条笔记吗？')) {
+                    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+                    notes = notes.filter(note => note.id !== id);
+                    localStorage.setItem('notes', JSON.stringify(notes));
+                    loadNotes();
+                }
+            };
+            
+            // 清空所有笔记函数
+            function clearAllNotes() {
+                // 二次确认对话框
+                if (confirm('确定要清空所有笔记吗？')) {
+                    if (confirm('此操作不可恢复，确定要继续吗？')) {
+                        localStorage.removeItem('notes');
+                        loadNotes();
+                    }
+                }
+            }
+            
+            // 全部复制笔记函数
+            function copyAllNotes() {
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                if (notes.length === 0) {
+                    alert('没有可复制的笔记记录');
+                    return;
+                }
+                
+                // 生成简洁的Markdown格式笔记
+                let markdownContent = '';
+                notes.forEach((note) => {
+                    const date = new Date(note.timestamp);
+                    const formattedDate = formatDateTime(date);
+                    markdownContent += `${formattedDate}：${note.content}\n\n`;
+                });
+                
+                // 复制到剪贴板
+                navigator.clipboard.writeText(markdownContent).then(() => {
+                    // 显示复制成功提示
+                    copyAllBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 已复制';
+                    copyAllBtn.disabled = true;
+                    copyAllBtn.classList.add('bg-green-500');
+                    
+                    // 2秒后恢复按钮状态
+                    setTimeout(() => {
+                        copyAllBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 全部复制';
+                        copyAllBtn.disabled = false;
+                        copyAllBtn.classList.remove('bg-green-500');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制');
+                });
+            }
+            
+            // 事件监听器注册
+            noteForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addNote();
+            });
+            
+            clearAllBtn.addEventListener('click', clearAllNotes);
+            
+            copyAllBtn.addEventListener('click', copyAllNotes);
+            
+            // 初始化加载笔记
+            loadNotes();
+        });
+    </script>
+</body>
+</html>
