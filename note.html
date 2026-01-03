@@ -70,11 +70,11 @@
             <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
                 <form id="noteForm" class="flex flex-col space-y-4">
                     <div>
-                    
+                        
                         <textarea 
                             id="noteContent" 
                             class="input-field" 
-                            rows="3" 
+                            rows="4" 
                             placeholder="输入你想记录的内容..."
                             required
                         ></textarea>
@@ -94,6 +94,7 @@
             <!-- 记录展示区域 -->
             <section>
                 <div class="flex justify-between items-center mb-4">
+                    
                     <div class="flex items-center space-x-3">
                         <span id="noteCount" class="text-sm text-gray-500">共 0 条记录</span>
                         <button 
@@ -208,8 +209,8 @@
                 // 添加空状态元素
                 notesContainer.appendChild(emptyState);
                 
-                // 按时间正序排列（已经是正序，因为新笔记添加到数组末尾）
-                notes.forEach(note => {
+                // 按时间倒序排列，最新的在最上面
+                notes.reverse().forEach(note => {
                     const noteElement = createNoteElement(note);
                     notesContainer.appendChild(noteElement);
                 });
