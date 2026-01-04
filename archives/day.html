@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一天</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        light: '#f8fafc',
+                        dark: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .btn-transition {
+                @apply transition-all duration-300 ease-in-out;
+            }
+            .status-badge {
+                @apply px-2 py-1 rounded-full text-xs font-medium;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-in-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 当前任务状态 -->
+        <div id="current-task-section-container" class="mb-6">
+            <section id="current-task-section" class="bg-white rounded-xl p-4 shadow-md border-l-4 border-primary hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fa fa-play-circle text-primary mr-2"></i>
+                        当前任务
+                    </h2>
+                    <span id="current-task-timer" class="text-xl font-mono font-bold text-primary">00:00:00</span>
+                </div>
+                <div class="mt-2">
+                    <h3 id="current-task-name" class="text-base font-medium text-gray-800"></h3>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="current-task-start-time"></span> 开始
+                    </p>
+                </div>
+                <div class="mt-3 text-right">
+                    <button id="end-task-btn" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-1 rounded-lg text-sm font-medium btn-transition">
+                        结束任务
+                    </button>
+                </div>
+            </section>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <main>
+            <!-- 任务清单 -->
+            <section class="mb-8">
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fa fa-list-ul text-primary mr-2"></i>
+                            任务清单
+                        </h2>
+                        <div class="flex gap-2">
+                            <button id="create-task-btn" class="bg-primary hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium btn-transition flex items-center">
+                                <i class="fa fa-plus mr-1"></i>
+                                创建任务
+                            </button>
+                            <button id="export-tasks-btn" class="bg-secondary hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium btn-transition flex items-center">
+                                <i class="fa fa-download mr-1"></i>
+                                导出清单
+                            </button>
+                            <button id="export-records-btn" class="bg-secondary hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium btn-transition flex items-center">
+                                <i class="fa fa-download mr-1"></i>
+                                导出记录
+                            </button>
+                            <button id="clear-tasks-btn" class="text-sm text-gray-500 hover:text-danger flex items-center btn-transition px-3 py-1.5 rounded-lg">
+                                <i class="fa fa-trash-o mr-1"></i>
+                                清除所有
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="tasks-container" class="space-y-3">
+                        <div id="no-tasks-message" class="text-center py-8 text-gray-500">
+                            <i class="fa fa-clipboard text-4xl mb-3"></i>
+                            <p>暂无任务，创建一个新任务开始吧！</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 任务记录 -->
+            <section>
+                <div class="bg-white rounded-xl p-6 shadow-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="fa fa-history text-primary mr-2"></i>
+                                任务记录
+                            </h2>
+                            <div class="flex items-center mt-1">
+                                <i class="fa fa-clock-o text-primary mr-1"></i>
+                                <span class="text-sm text-gray-600">今日累计工作时长：</span>
+                                <span class="text-base font-bold text-gray-800 ml-1" id="today-total-time">00:00</span>
+                            </div>
+                        </div>
+                        <button id="clear-records-btn" class="text-sm text-gray-500 hover:text-danger flex items-center btn-transition">
+                            <i class="fa fa-trash-o mr-1"></i>
+                            清除所有
+                        </button>
+                    </div>
+                    
+                    <div id="records-container" class="space-y-3">
+                        <div id="no-records-message" class="text-center py-8 text-gray-500">
+                            <i class="fa fa-clock-o text-4xl mb-3"></i>
+                            <p>暂无任务记录</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- 创建任务模态框 -->
+    <div id="create-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">创建新任务</h3>
+            <form id="create-task-form" class="space-y-4">
+                <div>
+                    <label for="create-task-name" class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
+                    <input type="text" id="create-task-name" name="task-name" placeholder="输入任务名称" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                </div>
+                
+                <div>
+                    <label for="create-task-time" class="block text-sm font-medium text-gray-700 mb-1">计划用时（分钟）</label>
+                    <input type="number" id="create-task-time" name="task-time" placeholder="预计完成时间" min="1" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                </div>
+                
+                <div class="flex space-x-3 pt-2">
+                    <button type="submit" class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium btn-transition">
+                        创建任务
+                    </button>
+                    
+                    <button type="button" id="cancel-create-task-btn" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium btn-transition">
+                        取消
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 结束任务模态框 -->
+    <div id="end-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">结束当前任务</h3>
+            <p class="text-gray-600 mb-6">请选择结束任务的方式：</p>
+            
+            <div class="space-y-3">
+                <button id="complete-task-btn" class="w-full py-3 px-4 bg-success hover:bg-green-600 text-white rounded-lg font-medium btn-transition flex items-center justify-center">
+                    <i class="fa fa-check-circle mr-2"></i>
+                    完成任务
+                </button>
+                
+                <button id="pause-task-btn" class="w-full py-3 px-4 bg-warning hover:bg-amber-600 text-white rounded-lg font-medium btn-transition flex items-center justify-center">
+                    <i class="fa fa-pause-circle mr-2"></i>
+                    暂停任务
+                </button>
+                
+                <button id="cancel-task-btn" class="w-full py-3 px-4 bg-danger hover:bg-red-600 text-white rounded-lg font-medium btn-transition flex items-center justify-center">
+                    <i class="fa fa-times-circle mr-2"></i>
+                    取消任务
+                </button>
+            </div>
+            
+            <div class="mt-6 text-right">
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700 font-medium btn-transition">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑记录模态框 -->
+    <div id="edit-record-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">编辑任务记录</h3>
+            <form id="edit-record-form" class="space-y-4">
+                <input type="hidden" id="edit-record-id">
+                
+                <div>
+                    <label for="edit-record-task-name" class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
+                    <input type="text" id="edit-record-task-name" readonly class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg">
+                </div>
+                
+                <div>
+                    <label for="edit-record-start-datetime" class="block text-sm font-medium text-gray-700 mb-1">开始时间</label>
+                    <input type="datetime-local" id="edit-record-start-datetime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                </div>
+                
+                <div>
+                    <label for="edit-record-end-datetime" class="block text-sm font-medium text-gray-700 mb-1">结束时间</label>
+                    <input type="datetime-local" id="edit-record-end-datetime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用时</label>
+                    <p id="edit-record-duration" class="text-lg font-medium text-primary"></p>
+                </div>
+                
+                <div class="flex space-x-3 pt-2">
+                    <button type="submit" class="flex-1 py-3 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium btn-transition">
+                        保存修改
+                    </button>
+                    
+                    <button type="button" id="cancel-edit-record-btn" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium btn-transition">
+                        取消
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 确认清除模态框 -->
+    <div id="confirm-clear-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 fade-in">
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">确认清除</h3>
+            <p id="confirm-clear-message" class="text-gray-600 mb-6">您确定要清除所有内容吗？此操作不可恢复。</p>
+            
+            <div class="flex space-x-3">
+                <button id="confirm-clear-yes-btn" class="flex-1 py-3 px-4 bg-danger hover:bg-red-600 text-white rounded-lg font-medium btn-transition">
+                    确认清除
+                </button>
+                
+                <button id="confirm-clear-no-btn" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium btn-transition">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Application starting...');
+        
+        // 应用状态
+        const appState = {
+            tasks: [],
+            records: [],
+            currentTask: null,
+            timerInterval: null,
+            currentTaskStartTime: null,
+            currentTaskElapsedTime: 0
+        };
+        
+        // DOM 元素
+        const elements = {
+            // 容器
+            tasksContainer: document.getElementById('tasks-container'),
+            noTasksMessage: document.getElementById('no-tasks-message'),
+            recordsContainer: document.getElementById('records-container'),
+            noRecordsMessage: document.getElementById('no-records-message'),
+            currentTaskSection: document.getElementById('current-task-section'),
+            todayTotalTime: document.getElementById('today-total-time'),
+            
+            // 当前任务
+            currentTaskName: document.getElementById('current-task-name'),
+            currentTaskStartTime: document.getElementById('current-task-start-time'),
+            currentTaskTimer: document.getElementById('current-task-timer'),
+            endTaskBtn: document.getElementById('end-task-btn'),
+            
+            // 功能按钮
+            createTaskBtn: document.getElementById('create-task-btn'),
+            exportTasksBtn: document.getElementById('export-tasks-btn'),
+            exportRecordsBtn: document.getElementById('export-records-btn'),
+            clearTasksBtn: document.getElementById('clear-tasks-btn'),
+            clearRecordsBtn: document.getElementById('clear-records-btn'),
+            
+            // 创建任务模态框
+            createTaskModal: document.getElementById('create-task-modal'),
+            createTaskForm: document.getElementById('create-task-form'),
+            createTaskName: document.getElementById('create-task-name'),
+            createTaskTime: document.getElementById('create-task-time'),
+            cancelCreateTaskBtn: document.getElementById('cancel-create-task-btn'),
+            
+            // 结束任务模态框
+            endTaskModal: document.getElementById('end-task-modal'),
+            completeTaskBtn: document.getElementById('complete-task-btn'),
+            pauseTaskBtn: document.getElementById('pause-task-btn'),
+            cancelTaskBtn: document.getElementById('cancel-task-btn'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            
+            // 确认清除模态框
+            confirmClearModal: document.getElementById('confirm-clear-modal'),
+            confirmClearMessage: document.getElementById('confirm-clear-message'),
+            confirmClearYesBtn: document.getElementById('confirm-clear-yes-btn'),
+            confirmClearNoBtn: document.getElementById('confirm-clear-no-btn'),
+            
+            // 编辑记录模态框
+            editRecordModal: document.getElementById('edit-record-modal'),
+            editRecordForm: document.getElementById('edit-record-form'),
+            editRecordId: document.getElementById('edit-record-id'),
+            editRecordTaskName: document.getElementById('edit-record-task-name'),
+            editRecordStartDatetime: document.getElementById('edit-record-start-datetime'),
+            editRecordEndDatetime: document.getElementById('edit-record-end-datetime'),
+            editRecordDuration: document.getElementById('edit-record-duration'),
+            cancelEditRecordBtn: document.getElementById('cancel-edit-record-btn')
+        };
+        
+        console.log('Elements loaded:', elements);
+        
+        // 初始化应用
+        function initApp() {
+            console.log('Initializing app...');
+            loadData();
+            renderTasks();
+            renderRecords();
+            updateTodayTotalTime();
+            setupEventListeners();
+        }
+        
+        // 从本地存储加载数据
+        function loadData() {
+            try {
+                const savedTasks = localStorage.getItem('dayAppTasks');
+                const savedRecords = localStorage.getItem('dayAppRecords');
+                
+                if (savedTasks) {
+                    appState.tasks = JSON.parse(savedTasks).map(task => ({
+                        ...task,
+                        createdAt: new Date(task.createdAt),
+                        updatedAt: new Date(task.updatedAt)
+                    }));
+                }
+                
+                if (savedRecords) {
+                    appState.records = JSON.parse(savedRecords).map(record => ({
+                        ...record,
+                        startTime: new Date(record.startTime),
+                        endTime: new Date(record.endTime)
+                    }));
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            try {
+                localStorage.setItem('dayAppTasks', JSON.stringify(appState.tasks));
+                localStorage.setItem('dayAppRecords', JSON.stringify(appState.records));
+            } catch (error) {
+                console.error('保存数据失败:', error);
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            console.log('Setting up event listeners...');
+            
+            // 创建任务按钮
+            elements.createTaskBtn.addEventListener('click', function() {
+                console.log('Create task button clicked!');
+                showCreateTaskModal();
+            });
+            
+            elements.createTaskForm.addEventListener('submit', handleCreateTaskSubmit);
+            elements.cancelCreateTaskBtn.addEventListener('click', hideCreateTaskModal);
+            
+            // 结束任务按钮
+            elements.endTaskBtn.addEventListener('click', showEndTaskModal);
+            elements.completeTaskBtn.addEventListener('click', () => endTask('completed'));
+            elements.pauseTaskBtn.addEventListener('click', () => endTask('paused'));
+            elements.cancelTaskBtn.addEventListener('click', () => endTask('cancelled'));
+            elements.closeModalBtn.addEventListener('click', hideEndTaskModal);
+            
+            // 清除按钮
+            elements.clearTasksBtn.addEventListener('click', () => showConfirmClearModal('tasks'));
+            elements.clearRecordsBtn.addEventListener('click', () => showConfirmClearModal('records'));
+            elements.confirmClearYesBtn.addEventListener('click', handleConfirmClear);
+            elements.confirmClearNoBtn.addEventListener('click', hideConfirmClearModal);
+            
+            // 编辑记录模态框
+            elements.editRecordForm.addEventListener('submit', handleEditRecordSubmit);
+            elements.cancelEditRecordBtn.addEventListener('click', hideEditRecordModal);
+            
+            // 监听日期时间变化，实时更新持续时间
+            elements.editRecordStartDatetime.addEventListener('change', updateEditRecordDuration);
+            elements.editRecordEndDatetime.addEventListener('change', updateEditRecordDuration);
+            
+            // 导出按钮
+            elements.exportTasksBtn.addEventListener('click', exportTasks);
+            elements.exportRecordsBtn.addEventListener('click', exportRecords);
+        }
+        
+        // 显示创建任务模态框
+        function showCreateTaskModal() {
+            console.log('Showing create task modal');
+            elements.createTaskModal.classList.remove('hidden');
+            elements.createTaskName.focus();
+        }
+        
+        // 隐藏创建任务模态框
+        function hideCreateTaskModal() {
+            elements.createTaskModal.classList.add('hidden');
+            elements.createTaskForm.reset();
+        }
+        
+        // 处理创建任务表单提交
+        function handleCreateTaskSubmit(e) {
+            e.preventDefault();
+            console.log('Create task form submitted');
+            
+            const name = elements.createTaskName.value.trim();
+            const plannedTime = parseInt(elements.createTaskTime.value);
+            
+            if (!name || isNaN(plannedTime) || plannedTime <= 0) {
+                alert('请输入有效的任务名称和计划用时');
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                name,
+                plannedTime,
+                actualTime: 0,
+                status: 'notStarted',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            
+            appState.tasks.push(newTask);
+            saveData();
+            renderTasks();
+            updateTodayTotalTime();
+            
+            hideCreateTaskModal();
+        }
+        
+        // 开始任务
+        function startTask(taskId) {
+            console.log('Starting task:', taskId);
+            
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            task.status = 'inProgress';
+            task.updatedAt = new Date();
+            
+            appState.currentTask = task;
+            appState.currentTaskStartTime = new Date();
+            appState.currentTaskElapsedTime = 0;
+            
+            elements.currentTaskName.textContent = task.name;
+            elements.currentTaskStartTime.textContent = formatDateTime(appState.currentTaskStartTime);
+            elements.currentTaskSection.classList.remove('hidden');
+            
+            startTimer();
+            saveData();
+            renderTasks();
+        }
+        
+        // 启动计时器
+        function startTimer() {
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+            }
+            
+            appState.timerInterval = setInterval(() => {
+                appState.currentTaskElapsedTime++;
+                elements.currentTaskTimer.textContent = formatTime(appState.currentTaskElapsedTime);
+            }, 1000);
+        }
+        
+        // 停止计时器
+        function stopTimer() {
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+        }
+        
+        // 显示结束任务模态框
+        function showEndTaskModal() {
+            elements.endTaskModal.classList.remove('hidden');
+        }
+        
+        // 隐藏结束任务模态框
+        function hideEndTaskModal() {
+            elements.endTaskModal.classList.add('hidden');
+        }
+        
+        // 结束任务
+        function endTask(endType) {
+            if (!appState.currentTask) return;
+            
+            const endTime = new Date();
+            const duration = Math.floor((endTime - appState.currentTaskStartTime) / 1000 / 60);
+            
+            const task = appState.currentTask;
+            task.actualTime += duration;
+            task.updatedAt = endTime;
+            
+            if (endType === 'completed') {
+                task.status = 'completed';
+            } else if (endType === 'cancelled') {
+                task.status = 'cancelled';
+            }
+            
+            const record = {
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                taskId: task.id,
+                taskName: task.name,
+                startTime: appState.currentTaskStartTime,
+                endTime: endTime,
+                duration: duration,
+                endType: endType
+            };
+            
+            appState.records.unshift(record);
+            
+            appState.currentTask = null;
+            appState.currentTaskStartTime = null;
+            appState.currentTaskElapsedTime = 0;
+            
+            stopTimer();
+            elements.currentTaskSection.classList.add('hidden');
+            hideEndTaskModal();
+            
+            saveData();
+            renderTasks();
+            renderRecords();
+            updateTodayTotalTime();
+        }
+        
+        // 显示确认清除模态框
+        function showConfirmClearModal(target) {
+            elements.confirmClearModal.classList.remove('hidden');
+            elements.confirmClearMessage.textContent = target === 'tasks' 
+                ? '您确定要清除所有任务吗？此操作不可恢复。'
+                : '您确定要清除所有任务记录吗？此操作不可恢复。';
+            appState.clearTarget = target;
+        }
+        
+        // 隐藏确认清除模态框
+        function hideConfirmClearModal() {
+            elements.confirmClearModal.classList.add('hidden');
+        }
+        
+        // 处理确认清除
+        function handleConfirmClear() {
+            if (appState.clearTarget === 'tasks') {
+                if (appState.currentTask) {
+                    endTask('cancelled');
+                }
+                appState.tasks = [];
+                renderTasks();
+            } else {
+                appState.records = [];
+                renderRecords();
+            }
+            
+            updateTodayTotalTime();
+            saveData();
+            hideConfirmClearModal();
+        }
+        
+        // 渲染任务列表
+        function renderTasks() {
+            if (appState.tasks.length === 0) {
+                elements.noTasksMessage.classList.remove('hidden');
+                elements.tasksContainer.innerHTML = '';
+                elements.tasksContainer.appendChild(elements.noTasksMessage);
+                return;
+            }
+            
+            elements.noTasksMessage.classList.add('hidden');
+            elements.tasksContainer.innerHTML = '';
+            
+            appState.tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'bg-gray-50 rounded-lg p-4 slide-in';
+                
+                const statusText = {
+                    'notStarted': '未开始',
+                    'inProgress': '进行中',
+                    'completed': '已完成',
+                    'cancelled': '已取消'
+                }[task.status];
+                
+                const statusClass = {
+                    'notStarted': 'bg-gray-200 text-gray-700',
+                    'inProgress': 'bg-blue-100 text-blue-700',
+                    'completed': 'bg-green-100 text-green-700',
+                    'cancelled': 'bg-red-100 text-red-700'
+                }[task.status];
+                
+                const progressPercent = task.plannedTime > 0 
+                    ? Math.min(Math.round((task.actualTime / task.plannedTime) * 100), 100) 
+                    : 0;
+                
+                taskElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center">
+                                <h3 class="font-medium text-gray-800">${task.name}</h3>
+                                ${(task.status === 'notStarted' || task.status === 'inProgress') && task.id !== appState?.currentTask?.id ? `
+                                    <button class="start-task-btn ml-3 bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium btn-transition" 
+                                            onclick="startTask('${task.id}')">
+                                        开始处理
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="flex items-center mt-1 text-sm">
+                                <span class="status-badge ${statusClass} mr-3">${statusText}</span>
+                                <span class="text-gray-500">计划: ${task.plannedTime}分钟</span>
+                                <span class="mx-2">|</span>
+                                <span class="text-gray-500">已用: ${task.actualTime}分钟</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-primary h-2.5 rounded-full" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-xs text-gray-500">
+                            <span>${progressPercent}%</span>
+                            <span>${task.actualTime}/${task.plannedTime}分钟</span>
+                        </div>
+                    </div>
+                `;
+                
+                elements.tasksContainer.appendChild(taskElement);
+            });
+        }
+        
+        // 渲染任务记录
+        function renderRecords() {
+            if (appState.records.length === 0) {
+                elements.noRecordsMessage.classList.remove('hidden');
+                elements.recordsContainer.innerHTML = '';
+                elements.recordsContainer.appendChild(elements.noRecordsMessage);
+                return;
+            }
+            
+            elements.noRecordsMessage.classList.add('hidden');
+            elements.recordsContainer.innerHTML = '';
+            
+            appState.records.forEach(record => {
+                const recordElement = document.createElement('div');
+                recordElement.className = 'bg-gray-50 rounded-lg p-4 slide-in';
+                
+                const endTypeText = {
+                    'completed': '已完成',
+                    'paused': '已暂停',
+                    'cancelled': '已取消'
+                }[record.endType];
+                
+                const endTypeClass = {
+                    'completed': 'text-success',
+                    'paused': 'text-warning',
+                    'cancelled': 'text-danger'
+                }[record.endType];
+                
+                const timeRange = `${formatDate(record.startTime)} ${formatTimeShort(record.startTime)}-${formatTimeShort(record.endTime)}`;
+                
+                recordElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-medium text-gray-800">${record.taskName}</h3>
+                            <div class="flex items-center mt-1 text-sm">
+                                <span class="${endTypeClass} font-medium mr-3">${endTypeText}</span>
+                                <span class="text-gray-500">${timeRange}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-gray-700 font-medium mr-3">${record.duration}分钟</span>
+                            <button class="edit-record-btn text-primary hover:text-blue-700" onclick="showEditRecordModal('${record.id}')">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                elements.recordsContainer.appendChild(recordElement);
+            });
+        }
+        
+        // 更新今日累计用时
+        function updateTodayTotalTime() {
+            const today = new Date().toDateString();
+            
+            const todayRecords = appState.records.filter(record => {
+                return new Date(record.startTime).toDateString() === today;
+            });
+            
+            let totalMinutes = todayRecords.reduce((total, record) => total + record.duration, 0);
+            
+            if (appState.currentTask && appState.currentTaskStartTime) {
+                const currentTaskElapsedMinutes = Math.floor(appState.currentTaskElapsedTime / 60);
+                totalMinutes += currentTaskElapsedMinutes;
+            }
+            
+            elements.todayTotalTime.textContent = formatTimeFromMinutes(totalMinutes);
+        }
+        
+        // 显示编辑记录模态框
+        function showEditRecordModal(recordId) {
+            console.log('Showing edit record modal for:', recordId);
+            const record = appState.records.find(r => r.id === recordId);
+            if (!record) return;
+            
+            elements.editRecordId.value = record.id;
+            elements.editRecordTaskName.value = record.taskName;
+            
+            const startDateTimeLocal = formatDateTimeLocal(record.startTime);
+            const endDateTimeLocal = formatDateTimeLocal(record.endTime);
+            
+            elements.editRecordStartDatetime.value = startDateTimeLocal;
+            elements.editRecordEndDatetime.value = endDateTimeLocal;
+            
+            updateEditRecordDuration();
+            elements.editRecordModal.classList.remove('hidden');
+        }
+        
+        // 隐藏编辑记录模态框
+        function hideEditRecordModal() {
+            elements.editRecordModal.classList.add('hidden');
+            elements.editRecordForm.reset();
+        }
+        
+        // 更新编辑记录模态框中的持续时间
+        function updateEditRecordDuration() {
+            const startTime = new Date(elements.editRecordStartDatetime.value);
+            const endTime = new Date(elements.editRecordEndDatetime.value);
+            
+            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                elements.editRecordDuration.textContent = '请选择有效的开始和结束时间';
+                return;
+            }
+            
+            if (endTime < startTime) {
+                elements.editRecordDuration.textContent = '结束时间不能早于开始时间';
+                elements.editRecordDuration.classList.add('text-danger');
+                return;
+            }
+            
+            const durationMinutes = Math.floor((endTime - startTime) / 1000 / 60);
+            elements.editRecordDuration.textContent = `${durationMinutes}分钟`;
+            elements.editRecordDuration.classList.remove('text-danger');
+        }
+        
+        // 处理编辑记录表单提交
+        function handleEditRecordSubmit(e) {
+            e.preventDefault();
+            console.log('Edit record form submitted');
+            
+            const recordId = elements.editRecordId.value;
+            const record = appState.records.find(r => r.id === recordId);
+            if (!record) return;
+            
+            const newStartTime = new Date(elements.editRecordStartDatetime.value);
+            const newEndTime = new Date(elements.editRecordEndDatetime.value);
+            
+            if (isNaN(newStartTime.getTime()) || isNaN(newEndTime.getTime())) {
+                alert('请选择有效的开始和结束时间');
+                return;
+            }
+            
+            if (newEndTime < newStartTime) {
+                alert('结束时间不能早于开始时间');
+                return;
+            }
+            
+            const newDuration = Math.floor((newEndTime - newStartTime) / 1000 / 60);
+            console.log('Updating record with new times:', {
+                old: {
+                    startTime: record.startTime,
+                    endTime: record.endTime,
+                    duration: record.duration
+                },
+                new: {
+                    startTime: newStartTime,
+                    endTime: newEndTime,
+                    duration: newDuration
+                }
+            });
+            
+            record.startTime = newStartTime;
+            record.endTime = newEndTime;
+            record.duration = newDuration;
+            
+            console.log('Record updated:', record);
+            
+            updateTaskActualTime(record.taskId);
+            
+            console.log('Saving data...');
+            saveData();
+            
+            console.log('Re-rendering UI...');
+            renderRecords();
+            renderTasks();
+            updateTodayTotalTime();
+            
+            hideEditRecordModal();
+        }
+        
+        // 更新任务的实际用时
+        function updateTaskActualTime(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            const taskRecords = appState.records.filter(record => record.taskId === taskId);
+            const totalMinutes = taskRecords.reduce((total, record) => total + record.duration, 0);
+            
+            task.actualTime = totalMinutes;
+            task.updatedAt = new Date();
+        }
+        
+        // 工具函数：格式化日期时间为datetime-local格式
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        // 导出任务清单
+        function exportTasks() {
+            if (appState.tasks.length === 0) {
+                alert('暂无任务可导出');
+                return;
+            }
+            
+            let csvContent = "任务名称,计划用时(分钟),实际用时(分钟),状态,创建时间,更新时间\n";
+            
+            appState.tasks.forEach(task => {
+                const statusText = {
+                    'notStarted': '未开始',
+                    'inProgress': '进行中',
+                    'completed': '已完成',
+                    'cancelled': '已取消'
+                }[task.status];
+                
+                csvContent += `"${task.name}",${task.plannedTime},${task.actualTime},"${statusText}","${formatDateTime(task.createdAt)}","${formatDateTime(task.updatedAt)}"\n`;
+            });
+            
+            downloadCSV(csvContent, '任务清单.csv');
+        }
+        
+        // 导出任务记录
+        function exportRecords() {
+            if (appState.records.length === 0) {
+                alert('暂无记录可导出');
+                return;
+            }
+            
+            let csvContent = "任务名称,开始时间,结束时间,用时(分钟),结束类型\n";
+            
+            appState.records.forEach(record => {
+                const endTypeText = {
+                    'completed': '已完成',
+                    'paused': '已暂停',
+                    'cancelled': '已取消'
+                }[record.endType];
+                
+                csvContent += `"${record.taskName}","${formatDateTime(record.startTime)}","${formatDateTime(record.endTime)}",${record.duration},"${endTypeText}"\n`;
+            });
+            
+            downloadCSV(csvContent, '任务记录.csv');
+        }
+        
+        // 下载CSV文件
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 工具函数：格式化日期时间
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // 工具函数：格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 工具函数：格式化时间（短）
+        function formatTimeShort(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${hours}:${minutes}`;
+        }
+        
+        // 工具函数：格式化时间（秒转换为时:分:秒）
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        
+        // 工具函数：格式化时间（分钟转换为时:分）
+        function formatTimeFromMinutes(minutes) {
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        }
+        
+        // 全局函数，用于按钮点击
+        window.startTask = startTask;
+        window.showEditRecordModal = showEditRecordModal;
+        
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded, initializing app...');
+            initApp();
+        });
+    </script>
+</body>
+</html>
