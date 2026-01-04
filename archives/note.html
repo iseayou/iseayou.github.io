@@ -63,18 +63,18 @@
 </head>
 <body class="bg-neutral min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-2xl">
-        
+
 
         <main>
             <!-- 输入区域 -->
             <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
                 <form id="noteForm" class="flex flex-col space-y-4">
                     <div>
-                        
+
                         <textarea 
                             id="noteContent" 
                             class="input-field" 
-                            rows="4" 
+                            rows="3" 
                             placeholder="输入你想记录的内容..."
                             required
                         ></textarea>
@@ -94,7 +94,7 @@
             <!-- 记录展示区域 -->
             <section>
                 <div class="flex justify-between items-center mb-4">
-                    
+
                     <div class="flex items-center space-x-3">
                         <span id="noteCount" class="text-sm text-gray-500">共 0 条记录</span>
                         <button 
@@ -276,9 +276,16 @@
                     return;
                 }
                 
-                // 生成简洁的Markdown格式笔记
+                // 生成倒序的Markdown格式笔记，最新的在最上面
                 let markdownContent = '';
-                notes.forEach((note) => {
+                
+                // 先按时间戳排序，确保最新的在最上面
+                const sortedNotes = [...notes].sort((a, b) => {
+                    return new Date(b.timestamp) - new Date(a.timestamp);
+                });
+                
+                // 遍历排序后的笔记
+                sortedNotes.forEach((note) => {
                     const date = new Date(note.timestamp);
                     const formattedDate = formatDateTime(date);
                     markdownContent += `${formattedDate}：${note.content}\n\n`;
