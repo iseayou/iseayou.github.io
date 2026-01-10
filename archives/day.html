@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一天</title>
+    <title>一天 - 工作效率应用</title>
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -104,9 +104,9 @@
                                 <i class="fa fa-download mr-1"></i>
                                 导出清单
                             </button>
-                            <button id="export-records-btn" class="bg-secondary hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium btn-transition flex items-center">
-                                <i class="fa fa-download mr-1"></i>
-                                导出记录
+                            <button id="copy-records-btn" class="bg-secondary hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium btn-transition flex items-center">
+                                <i class="fa fa-copy mr-1"></i>
+                                复制记录
                             </button>
                             <button id="clear-tasks-btn" class="text-sm text-gray-500 hover:text-danger flex items-center btn-transition px-3 py-1.5 rounded-lg">
                                 <i class="fa fa-trash-o mr-1"></i>
@@ -307,7 +307,7 @@
             // 功能按钮
             createTaskBtn: document.getElementById('create-task-btn'),
             exportTasksBtn: document.getElementById('export-tasks-btn'),
-            exportRecordsBtn: document.getElementById('export-records-btn'),
+            copyRecordsBtn: document.getElementById('copy-records-btn'),
             clearTasksBtn: document.getElementById('clear-tasks-btn'),
             clearRecordsBtn: document.getElementById('clear-records-btn'),
             
@@ -426,7 +426,7 @@
             
             // 导出按钮
             elements.exportTasksBtn.addEventListener('click', exportTasks);
-            elements.exportRecordsBtn.addEventListener('click', exportRecords);
+            elements.copyRecordsBtn.addEventListener('click', copyRecords);
         }
         
         // 显示创建任务模态框
@@ -888,7 +888,42 @@
             downloadCSV(csvContent, '任务清单.csv');
         }
         
-        // 导出任务记录
+        // 复制任务记录
+        function copyRecords() {
+            if (appState.records.length === 0) {
+                alert('暂无任务记录可复制');
+                return;
+            }
+            
+            // 按要求的格式格式化记录：一个任务记录一行，格式为"2026-01-01 10:00-10:10 写一篇日记 用时10分钟 已完成"
+            const recordsText = appState.records.map(record => {
+                const startDate = formatDate(record.startTime);
+                const startTime = formatTimeShort(record.startTime);
+                const endTime = formatTimeShort(record.endTime);
+                const taskName = record.taskName;
+                const duration = record.duration;
+                const endReason = {
+                    'completed': '已完成',
+                    'paused': '已暂停',
+                    'cancelled': '已取消'
+                }[record.endType];
+                
+                return `${startDate} ${startTime}-${endTime} ${taskName} 用时${duration}分钟 ${endReason}`;
+            }).join('\n');
+            
+            console.log('Records text to copy:', recordsText);
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(recordsText).then(() => {
+                console.log('Records copied to clipboard successfully');
+                alert('任务记录已复制到剪贴板');
+            }).catch(err => {
+                console.error('Failed to copy records:', err);
+                alert('复制失败，请重试');
+            });
+        }
+        
+        // 导出任务记录（保留原功能作为备用）
         function exportRecords() {
             if (appState.records.length === 0) {
                 alert('暂无记录可导出');
