@@ -205,10 +205,15 @@
 
         <!-- 结果记录区域 -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold mb-4 flex items-center">
-                <i class="fa fa-history mr-2 text-primary"></i>
-                收集记录
-            </h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <i class="fa fa-history mr-2 text-primary"></i>
+                    收集记录
+                </h2>
+                <button id="clear-all-button" class="bg-danger hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                    清除全部记录
+                </button>
+            </div>
             <div id="collection-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <!-- 收集记录将在这里动态添加 -->
                 <p class="col-span-full text-center text-gray-500">还没有收集记录，快去摇一摇吧！</p>
@@ -315,6 +320,32 @@
 
         // 收集记录
         let collection = JSON.parse(localStorage.getItem('gameShakeCollection')) || {};
+        
+        // 初始化收集记录数据结构（如果是旧版本数据）
+        function initCollectionData() {
+            const updated = false;
+            Object.keys(collection).forEach(category => {
+                if (collection[category] && Array.isArray(collection[category]) && collection[category].length > 0) {
+                    // 检查是否是旧版本数据（纯字符串数组）
+                    if (typeof collection[category][0] === 'string') {
+                        // 转换为新的数据结构
+                        collection[category] = collection[category].map(item => ({
+                            name: item,
+                            timestamp: new Date().toISOString() // 为旧数据添加当前时间戳
+                        }));
+                        updated = true;
+                    }
+                }
+            });
+            
+            // 如果有更新，保存到localStorage
+            if (updated) {
+                localStorage.setItem('gameShakeCollection', JSON.stringify(collection));
+            }
+        }
+        
+        // 初始化数据结构
+        initCollectionData();
 
         // DOM 元素
         const categoryCards = document.querySelectorAll('.category-card');
@@ -326,12 +357,22 @@
         const resultText = document.getElementById('result-text');
         const shakeButton = document.getElementById('shake-button');
         const collectionList = document.getElementById('collection-list');
+        const clearAllButton = document.getElementById('clear-all-button');
 
         // 当前选中的分类
         let currentCategoryKey = '';
 
         // 初始化收集记录
         updateCollectionDisplay();
+        
+        // 清除全部记录按钮点击事件
+        clearAllButton.addEventListener('click', () => {
+            if (confirm('确定要清除所有收集记录吗？此操作不可恢复。')) {
+                collection = {};
+                localStorage.removeItem('gameShakeCollection');
+                updateCollectionDisplay();
+            }
+        });
 
         // 分类卡片点击事件
         categoryCards.forEach(card => {
@@ -397,8 +438,13 @@
             }
             
             // 检查是否已经收集过
-            if (!collection[category].includes(item)) {
-                collection[category].push(item);
+            const isCollected = collection[category].some(collectedItem => collectedItem.name === item);
+            if (!isCollected) {
+                // 添加带时间戳的新收集项
+                collection[category].push({
+                    name: item,
+                    timestamp: new Date().toISOString()
+                });
                 localStorage.setItem('gameShakeCollection', JSON.stringify(collection));
                 updateCollectionDisplay();
             }
@@ -425,11 +471,22 @@
                     categoryTitle.textContent = gameData[category].name;
                     collectionList.appendChild(categoryTitle);
                     
-                    // 创建分类项目
-                    items.forEach(item => {
+                    // 创建分类项目，按时间倒序排列
+                    items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                         .forEach(item => {
                         const itemElement = document.createElement('div');
                         itemElement.className = 'bg-gray-50 rounded-lg p-3 text-center shadow-sm';
-                        itemElement.textContent = item;
+                        
+                        // 格式化时间戳
+                        const date = new Date(item.timestamp);
+                        const formattedTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                        
+                        // 设置内容
+                        itemElement.innerHTML = `
+                            <div class="font-medium">${item.name}</div>
+                            <div class="text-xs text-gray-500 mt-1">${formattedTime}</div>
+                        `;
+                        
                         collectionList.appendChild(itemElement);
                     });
                 }
