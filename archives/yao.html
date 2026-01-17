@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏摇一摇</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3498db',
+                        secondary: '#f39c12',
+                        success: '#2ecc71',
+                        danger: '#e74c3c',
+                        warning: '#f1c40f',
+                        info: '#1abc9c',
+                        light: '#ecf0f1',
+                        dark: '#2c3e50'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                    animation: {
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .card-hover {
+                @apply transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+            }
+            .shake-animation {
+                animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            }
+            .result-animation {
+                animation: bounceIn 0.6s;
+            }
+            @keyframes bounceIn {
+                0% { transform: scale(0.3); opacity: 0; }
+                50% { transform: scale(1.05); }
+                70% { transform: scale(0.9); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            .confetti {
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                background-color: #f00;
+                border-radius: 50%;
+                animation: confetti-fall 3s ease-in-out forwards;
+            }
+            @keyframes confetti-fall {
+                0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 背景图 -->
+    <div class="fixed inset-0 z-0 opacity-10">
+        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/97cf83cfc1a241a4b8760ce21f89987b~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260117204509FEA44A6397760579F667&rrcfp=f06b921b&x-expires=1771245921&x-signature=9vRvz5UDkePRvaqvcjjmCy0xX9Y%3D" 
+             alt="背景" class="w-full h-full object-cover">
+    </div>
+
+    <!-- 主容器 -->
+    <div class="relative z-10 container mx-auto px-4 py-8">
+        <!-- 标题区域 -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-primary text-shadow mb-2">游戏摇一摇</h1>
+            <p class="text-lg text-gray-600">点击下方分类，摇动出你的惊喜！</p>
+        </header>
+
+        <!-- 分类选择区域 -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+            <!-- 宠物 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="pets">
+                <div class="h-32 bg-blue-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇宠物</h3>
+                </div>
+            </div>
+            
+            <!-- 食物 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="food">
+                <div class="h-32 bg-green-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇食物</h3>
+                </div>
+            </div>
+            
+            <!-- 工作 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="jobs">
+                <div class="h-32 bg-yellow-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇工作</h3>
+                </div>
+            </div>
+            
+            <!-- 装备 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="equipment">
+                <div class="h-32 bg-red-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇装备</h3>
+                </div>
+            </div>
+            
+            <!-- 地图 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="maps">
+                <div class="h-32 bg-purple-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇地图</h3>
+                </div>
+            </div>
+            
+            <!-- 海洋 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="ocean">
+                <div class="h-32 bg-blue-200 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇海洋</h3>
+                </div>
+            </div>
+            
+            <!-- 森林 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="forest">
+                <div class="h-32 bg-green-200 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇森林</h3>
+                </div>
+            </div>
+            
+            <!-- 沙漠 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="desert">
+                <div class="h-32 bg-yellow-200 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇沙漠</h3>
+                </div>
+            </div>
+            
+            <!-- 城市 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="city">
+                <div class="h-32 bg-gray-200 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇城市</h3>
+                </div>
+            </div>
+            
+            <!-- 守护者 -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="guardians">
+                <div class="h-32 bg-indigo-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇守护者</h3>
+                </div>
+            </div>
+            
+            <!-- 大BOSS -->
+            <div class="category-card bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" 
+                 data-category="bosses">
+                <div class="h-32 bg-red-100 flex items-center justify-center">
+                    <h3 class="text-xl font-semibold text-center">摇大BOSS</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 摇一摇区域 -->
+        <div id="shake-area" class="hidden bg-white rounded-lg shadow-lg p-6 mb-8 text-center">
+            <h2 id="current-category" class="text-2xl font-bold mb-4">摇宠物</h2>
+            <div id="shake-container" class="relative h-64 flex items-center justify-center mb-6">
+                <div id="shake-icon" class="text-8xl text-primary">
+                    <i class="fa fa-refresh"></i>
+                </div>
+                <div id="result-display" class="hidden absolute inset-0 flex items-center justify-center">
+                    <div class="bg-white rounded-full p-6 shadow-lg result-animation">
+                        <h3 id="result-text" class="text-2xl font-bold text-primary"></h3>
+                    </div>
+                </div>
+            </div>
+            <button id="shake-button" class="bg-secondary hover:bg-yellow-500 text-white font-bold py-3 px-8 rounded-full transition-colors duration-300 text-lg">
+                开始摇一摇
+            </button>
+        </div>
+
+        <!-- 结果记录区域 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fa fa-history mr-2 text-primary"></i>
+                收集记录
+            </h2>
+            <div id="collection-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- 收集记录将在这里动态添加 -->
+                <p class="col-span-full text-center text-gray-500">还没有收集记录，快去摇一摇吧！</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据定义
+        const gameData = {
+            pets: {
+                name: "摇宠物",
+                items: [
+                    "萌趣小鸡", "灵动小兔", "浅水小鸭", "敏捷小狼", "深海小鱼",
+                    "健壮小鹿", "沙漠骆驼", "机械小鸽", "雷霆猎豹", "深海鲸鲨", "炎翼朱雀"
+                ],
+                icon: "fa-paw",
+                color: "text-blue-500"
+            },
+            food: {
+                name: "摇食物",
+                items: [
+                    "嫩青草", "碎玉米粒", "新鲜水草", "生肉块", "沙漠野果",
+                    "机械能源块", "火焰果", "高级兽肉"
+                ],
+                icon: "fa-cutlery",
+                color: "text-green-500"
+            },
+            jobs: {
+                name: "摇工作",
+                items: [
+                    "伐木工", "搬运工", "采石工", "建筑工", "采摘工",
+                    "捕鱼工", "工匠", "向导"
+                ],
+                icon: "fa-briefcase",
+                color: "text-yellow-500"
+            },
+            equipment: {
+                name: "摇装备",
+                items: [
+                    "木质长剑", "皮质护盾", "潜水服", "登山杖", "防沙镜",
+                    "金属短刀", "火焰喷射器", "声波驱赶器", "古堡钥匙", "古玩探测仪"
+                ],
+                icon: "fa-shield",
+                color: "text-red-500"
+            },
+            maps: {
+                name: "摇地图",
+                items: [
+                    "海洋地图", "森林地图", "沙漠地图", "城市地图"
+                ],
+                icon: "fa-map",
+                color: "text-purple-500"
+            },
+            ocean: {
+                name: "摇海洋",
+                items: [
+                    "海盗小队", "食人鲨鱼", "深海漩涡", "毒刺水母群", "沉船障碍"
+                ],
+                icon: "fa-tint",
+                color: "text-blue-400"
+            },
+            forest: {
+                name: "摇森林",
+                items: [
+                    "狂暴野猪", "剧毒眼镜蛇", "迷雾迷宫", "咆哮黑熊", "山洞陷阱"
+                ],
+                icon: "fa-tree",
+                color: "text-green-600"
+            },
+            desert: {
+                name: "摇沙漠",
+                items: [
+                    "强沙尘暴", "沙漠狼群", "剧毒蝎子", "古堡机关", "缺水危机"
+                ],
+                icon: "fa-sun-o",
+                color: "text-yellow-600"
+            },
+            city: {
+                name: "摇城市",
+                items: [
+                    "街头小偷", "狂暴流浪狗群", "交通堵塞障碍", "古玩店陷阱", "黑帮小喽啰"
+                ],
+                icon: "fa-building",
+                color: "text-gray-600"
+            },
+            guardians: {
+                name: "摇守护者",
+                items: [
+                    "深海巨鳌", "丛林巨猿", "沙漠毒蜥", "钢铁战狮"
+                ],
+                icon: "fa-star",
+                color: "text-indigo-500"
+            },
+            bosses: {
+                name: "摇大BOSS",
+                items: [
+                    "深海龙王", "森林树魔", "沙漠法老", "机械魔王"
+                ],
+                icon: "fa-fire",
+                color: "text-red-600"
+            }
+        };
+
+        // 收集记录
+        let collection = JSON.parse(localStorage.getItem('gameShakeCollection')) || {};
+
+        // DOM 元素
+        const categoryCards = document.querySelectorAll('.category-card');
+        const shakeArea = document.getElementById('shake-area');
+        const currentCategory = document.getElementById('current-category');
+        const shakeContainer = document.getElementById('shake-container');
+        const shakeIcon = document.getElementById('shake-icon');
+        const resultDisplay = document.getElementById('result-display');
+        const resultText = document.getElementById('result-text');
+        const shakeButton = document.getElementById('shake-button');
+        const collectionList = document.getElementById('collection-list');
+
+        // 当前选中的分类
+        let currentCategoryKey = '';
+
+        // 初始化收集记录
+        updateCollectionDisplay();
+
+        // 分类卡片点击事件
+        categoryCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const category = card.dataset.category;
+                currentCategoryKey = category;
+                
+                // 更新摇一摇区域
+                currentCategory.textContent = gameData[category].name;
+                shakeArea.classList.remove('hidden');
+                
+                // 重置摇一摇区域
+                resultDisplay.classList.add('hidden');
+                shakeIcon.classList.remove('shake-animation');
+                
+                // 滚动到摇一摇区域
+                shakeArea.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // 摇一摇按钮点击事件
+        shakeButton.addEventListener('click', () => {
+            if (!currentCategoryKey) return;
+            
+            // 重置结果显示
+            resultDisplay.classList.add('hidden');
+            
+            // 添加摇动动画
+            shakeIcon.classList.add('shake-animation');
+            
+            // 禁用按钮
+            shakeButton.disabled = true;
+            shakeButton.textContent = '摇动摇动中...';
+            
+            // 随机延迟后显示结果
+            setTimeout(() => {
+                // 随机选择一个结果
+                const items = gameData[currentCategoryKey].items;
+                const randomIndex = Math.floor(Math.random() * items.length);
+                const result = items[randomIndex];
+                
+                // 显示结果
+                resultText.textContent = result;
+                resultDisplay.classList.remove('hidden');
+                
+                // 启用按钮
+                shakeButton.disabled = false;
+                shakeButton.textContent = '再来一次';
+                
+                // 添加到收集记录
+                addToCollection(currentCategoryKey, result);
+                
+                // 创建庆祝效果
+                createConfetti();
+                
+            }, 1500); // 1.5秒后显示结果
+        });
+
+        // 添加到收集记录
+        function addToCollection(category, item) {
+            if (!collection[category]) {
+                collection[category] = [];
+            }
+            
+            // 检查是否已经收集过
+            if (!collection[category].includes(item)) {
+                collection[category].push(item);
+                localStorage.setItem('gameShakeCollection', JSON.stringify(collection));
+                updateCollectionDisplay();
+            }
+        }
+
+        // 更新收集记录显示
+        function updateCollectionDisplay() {
+            // 清空列表
+            collectionList.innerHTML = '';
+            
+            // 检查是否有收集记录
+            let hasItems = false;
+            
+            // 遍历所有分类
+            Object.keys(gameData).forEach(category => {
+                const items = collection[category] || [];
+                
+                if (items.length > 0) {
+                    hasItems = true;
+                    
+                    // 创建分类标题
+                    const categoryTitle = document.createElement('div');
+                    categoryTitle.className = 'col-span-full font-bold text-lg my-2 text-gray-700';
+                    categoryTitle.textContent = gameData[category].name;
+                    collectionList.appendChild(categoryTitle);
+                    
+                    // 创建分类项目
+                    items.forEach(item => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'bg-gray-50 rounded-lg p-3 text-center shadow-sm';
+                        itemElement.textContent = item;
+                        collectionList.appendChild(itemElement);
+                    });
+                }
+            });
+            
+            // 如果没有收集记录，显示提示
+            if (!hasItems) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'col-span-full text-center text-gray-500';
+                emptyMessage.textContent = '还没有收集记录，快去摇一摇吧！';
+                collectionList.appendChild(emptyMessage);
+            }
+        }
+
+        // 创建庆祝效果
+        function createConfetti() {
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+            
+            // 创建50个纸屑
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // 随机颜色
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机位置
+                confetti.style.left = `${Math.random() * 100}vw`;
+                
+                // 随机大小
+                const size = Math.random() * 10 + 5;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // 随机旋转
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                // 随机动画持续时间
+                confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                
+                // 添加到页面
+                document.body.appendChild(confetti);
+                
+                // 动画结束后移除
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
