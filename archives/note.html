@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>笔记</title>
+    <title>本地笔记记录</title>
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -70,11 +70,11 @@
             <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
                 <form id="noteForm" class="flex flex-col space-y-4">
                     <div>
-
+                        <label for="noteContent" class="block text-sm font-medium text-gray-700 mb-1">笔记内容</label>
                         <textarea 
                             id="noteContent" 
                             class="input-field" 
-                            rows="5" 
+                            rows="3" 
                             placeholder="输入你想记录的内容..."
                             required
                         ></textarea>
@@ -94,7 +94,7 @@
             <!-- 记录展示区域 -->
             <section>
                 <div class="flex justify-between items-center mb-4">
-
+                    <h2 class="text-xl font-semibold text-gray-800">笔记记录</h2>
                     <div class="flex items-center space-x-3">
                         <span id="noteCount" class="text-sm text-gray-500">共 0 条记录</span>
                         <button 
@@ -102,14 +102,14 @@
                             id="copyAllBtn" 
                             class="btn bg-blue-500 text-white hover:bg-blue-600 text-sm py-1"
                         >
-                            <i class="fa fa-copy mr-1"></i> 复制
+                            <i class="fa fa-copy mr-1"></i> 全部复制
                         </button>
                         <button 
                             type="button" 
                             id="clearAllBtn" 
                             class="btn btn-danger text-sm py-1"
                         >
-                            <i class="fa fa-trash mr-1"></i> 清空
+                            <i class="fa fa-trash mr-1"></i> 清空记录
                         </button>
                     </div>
                 </div>
@@ -279,9 +279,9 @@
                 // 生成倒序的Markdown格式笔记，最新的在最上面
                 let markdownContent = '';
                 
-                // 先按时间戳排序，确保最新的在最上面
+                // 先按时间戳排序，确保最新的在最下面
                 const sortedNotes = [...notes].sort((a, b) => {
-                    return new Date(b.timestamp) - new Date(a.timestamp);
+                    return new Date(a.timestamp) - new Date(b.timestamp);
                 });
                 
                 // 遍历排序后的笔记
