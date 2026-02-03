@@ -603,7 +603,10 @@
         
         // 渲染任务列表
         function renderTasks() {
-            if (appState.tasks.length === 0) {
+            // 过滤掉已完成的任务
+            const activeTasks = appState.tasks.filter(task => task.status !== 'completed');
+            
+            if (activeTasks.length === 0) {
                 elements.noTasksMessage.classList.remove('hidden');
                 elements.tasksContainer.innerHTML = '';
                 elements.tasksContainer.appendChild(elements.noTasksMessage);
@@ -613,7 +616,7 @@
             elements.noTasksMessage.classList.add('hidden');
             elements.tasksContainer.innerHTML = '';
             
-            appState.tasks.forEach(task => {
+            activeTasks.forEach(task => {
                 const taskElement = document.createElement('div');
                 taskElement.className = 'bg-gray-50 rounded-lg p-4 slide-in';
                 
