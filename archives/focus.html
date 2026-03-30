@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>时间管理器 - 专注与自由时间规划</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 统一的 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6', // 蓝色 - 专注时间
+            secondary: '#10b981', // 绿色 - 自由时间
+            neutral: '#f3f4f6', // 浅灰色 - 背景
+            dark: '#1f2937', // 深灰色 - 文字
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .glass-effect {
+        @apply bg-white bg-opacity-80 backdrop-blur-md;
+      }
+      .card-shadow {
+        @apply shadow-lg hover:shadow-xl transition-shadow duration-300;
+      }
+      .btn-primary {
+        @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-300 focus:ring-2 focus:ring-primary/50 focus:outline-none;
+      }
+      .btn-secondary {
+        @apply bg-secondary text-white px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors duration-300 focus:ring-2 focus:ring-secondary/50 focus:outline-none;
+      }
+      .btn-outline {
+        @apply border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-300 focus:ring-2 focus:ring-gray-200 focus:outline-none;
+      }
+      .input-field {
+        @apply border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none transition-colors duration-300;
+      }
+      .time-slot-focus {
+        @apply bg-primary text-white;
+      }
+      .time-slot-free {
+        @apply bg-secondary text-white;
+      }
+      .time-slot-current {
+        @apply ring-4 ring-yellow-400 ring-opacity-70;
+      }
+    }
+  </style>
+</head>
+<body class="bg-neutral min-h-screen font-sans text-dark">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 头部：应用标题和当前状态 -->
+    <header class="mb-8">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-dark flex items-center">
+            <i class="fa fa-clock-o mr-3 text-primary"></i>
+            时间管理器
+          </h1>
+          <p class="text-gray-600 mt-1">专注与自由时间规划</p>
+        </div>
+        <div class="mt-4 md:mt-0">
+          <div id="current-status" class="glass-effect card-shadow rounded-xl p-4 text-center">
+            <h2 class="text-xl font-semibold mb-2" id="status-text">当前状态：空闲</h2>
+            <div class="flex items-center justify-center">
+              <div id="countdown" class="text-4xl font-bold">--:--:--</div>
+              <div id="countdown-label" class="ml-3 text-lg text-gray-600">到下一时段</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 左侧：时间段管理 -->
+      <div class="lg:col-span-2">
+        <div class="glass-effect card-shadow rounded-xl p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">时间段管理</h2>
+            <button id="add-time-slot-btn" class="btn-primary flex items-center">
+              <i class="fa fa-plus mr-2"></i> 添加时间段
+            </button>
+          </div>
+          
+          <div id="time-slots-container" class="space-y-4">
+            <!-- 时间段列表将通过JavaScript动态生成 -->
+            <div class="text-gray-500 text-center py-8" id="empty-state">
+              <i class="fa fa-calendar-o text-4xl mb-3"></i>
+              <p>暂无时间段，请添加您的第一个时间段</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 时间轴可视化 -->
+        <div class="glass-effect card-shadow rounded-xl p-6 mt-8">
+          <h2 class="text-2xl font-bold mb-6">今日时间轴</h2>
+          <div class="relative">
+            <!-- 时间刻度 -->
+            <div class="flex justify-between mb-2 text-sm text-gray-500">
+              <span>00:00</span>
+              <span>03:00</span>
+              <span>06:00</span>
+              <span>09:00</span>
+              <span>12:00</span>
+              <span>15:00</span>
+              <span>18:00</span>
+              <span>21:00</span>
+              <span>24:00</span>
+            </div>
+            
+            <!-- 时间轴线 -->
+            <div class="h-24 bg-gray-100 rounded-lg relative overflow-hidden" id="timeline">
+              <!-- 时间段将通过JavaScript动态生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：统计信息 -->
+      <div class="lg:col-span-1">
+        <div class="glass-effect card-shadow rounded-xl p-6">
+          <h2 class="text-2xl font-bold mb-6">今日统计</h2>
+          
+          <div class="space-y-6">
+            <!-- 专注时间统计 -->
+            <div class="bg-primary/10 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="font-semibold text-primary">专注时间</h3>
+                <span id="focus-time-total" class="text-lg font-bold text-primary">00:00</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="focus-time-progress" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- 自由时间统计 -->
+            <div class="bg-secondary/10 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="font-semibold text-secondary">自由时间</h3>
+                <span id="free-time-total" class="text-lg font-bold text-secondary">00:00</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="free-time-progress" class="bg-secondary h-2.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- 今日进度 -->
+            <div class="bg-gray-100 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="font-semibold">今日进度</h3>
+                <span id="day-progress" class="text-lg font-bold">0%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="day-progress-bar" class="bg-gray-500 h-2.5 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- 下一个时间段 -->
+            <div id="next-time-slot-card" class="border border-gray-200 rounded-lg p-4 hidden">
+              <h3 class="font-semibold mb-2">下一个时间段</h3>
+              <div id="next-time-slot-content">
+                <!-- 下一个时间段信息将通过JavaScript动态生成 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 添加/编辑时间段模态框 -->
+  <div id="time-slot-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold" id="modal-title">添加时间段</h2>
+        <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <form id="time-slot-form">
+        <input type="hidden" id="time-slot-id">
+        
+        <div class="mb-4">
+          <label for="time-slot-title" class="block text-gray-700 font-medium mb-2">标题</label>
+          <input type="text" id="time-slot-title" class="input-field w-full" placeholder="例如：工作、学习、休息" required>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="time-slot-start" class="block text-gray-700 font-medium mb-2">开始时间</label>
+            <input type="time" id="time-slot-start" class="input-field w-full" required>
+          </div>
+          <div>
+            <label for="time-slot-end" class="block text-gray-700 font-medium mb-2">结束时间</label>
+            <input type="time" id="time-slot-end" class="input-field w-full" required>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-gray-700 font-medium mb-2">类型</label>
+          <div class="flex space-x-4">
+            <label class="flex items-center cursor-pointer">
+              <input type="radio" name="time-slot-type" value="focus" class="form-radio text-primary focus:ring-primary" checked>
+              <span class="ml-2">专注时间</span>
+            </label>
+            <label class="flex items-center cursor-pointer">
+              <input type="radio" name="time-slot-type" value="free" class="form-radio text-secondary focus:ring-secondary">
+              <span class="ml-2">自由时间</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button type="button" id="cancel-btn" class="btn-outline">取消</button>
+          <button type="submit" id="save-btn" class="btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 确认删除模态框 -->
+  <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="delete-modal-content">
+      <h2 class="text-2xl font-bold mb-4">确认删除</h2>
+      <p class="mb-6">您确定要删除这个时间段吗？此操作无法撤销。</p>
+      
+      <div class="flex justify-end space-x-3">
+        <button id="cancel-delete-btn" class="btn-outline">取消</button>
+        <button id="confirm-delete-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors duration-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none">
+          删除
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 冲突提示模态框 -->
+  <div id="conflict-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="conflict-modal-content">
+      <div class="flex items-center mb-4">
+        <div class="bg-yellow-100 text-yellow-500 p-2 rounded-full mr-3">
+          <i class="fa fa-exclamation-triangle"></i>
+        </div>
+        <h2 class="text-2xl font-bold">时间段冲突</h2>
+      </div>
+      <p class="mb-4">您尝试添加的时间段与以下已存在的时间段冲突：</p>
+      <div id="conflict-list" class="bg-gray-50 rounded-lg p-4 mb-6 max-h-40 overflow-y-auto">
+        <!-- 冲突的时间段将通过JavaScript动态生成 -->
+      </div>
+      <p class="mb-6">请调整时间或选择覆盖现有时间段。</p>
+      
+      <div class="flex justify-end space-x-3">
+        <button id="cancel-conflict-btn" class="btn-outline">取消</button>
+        <button id="override-conflict-btn" class="btn-primary">覆盖</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    let timeSlots = JSON.parse(localStorage.getItem('timeSlots')) || [];
+    let currentEditingId = null;
+    let currentDeletingId = null;
+    let countdownInterval = null;
+    let conflictingSlots = [];
+    
+    // DOM 元素
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    const emptyState = document.getElementById('empty-state');
+    const addTimeSlotBtn = document.getElementById('add-time-slot-btn');
+    const timeSlotModal = document.getElementById('time-slot-modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const timeSlotForm = document.getElementById('time-slot-form');
+    const modalTitle = document.getElementById('modal-title');
+    const deleteModal = document.getElementById('delete-modal');
+    const deleteModalContent = document.getElementById('delete-modal-content');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const conflictModal = document.getElementById('conflict-modal');
+    const conflictModalContent = document.getElementById('conflict-modal-content');
+    const conflictList = document.getElementById('conflict-list');
+    const cancelConflictBtn = document.getElementById('cancel-conflict-btn');
+    const overrideConflictBtn = document.getElementById('override-conflict-btn');
+    const statusText = document.getElementById('status-text');
+    const countdown = document.getElementById('countdown');
+    const countdownLabel = document.getElementById('countdown-label');
+    const timeline = document.getElementById('timeline');
+    const focusTimeTotal = document.getElementById('focus-time-total');
+    const freeTimeTotal = document.getElementById('free-time-total');
+    const focusTimeProgress = document.getElementById('focus-time-progress');
+    const freeTimeProgress = document.getElementById('free-time-progress');
+    const dayProgress = document.getElementById('day-progress');
+    const dayProgressBar = document.getElementById('day-progress-bar');
+    const nextTimeSlotCard = document.getElementById('next-time-slot-card');
+    const nextTimeSlotContent = document.getElementById('next-time-slot-content');
+    
+    // 初始化应用
+    function initApp() {
+      renderTimeSlots();
+      renderTimeline();
+      updateStatistics();
+      updateNextTimeSlot();
+      startCountdown();
+      
+      // 每分钟更新一次倒计时和状态
+      setInterval(() => {
+        updateCountdown();
+      }, 60000);
+      
+      // 每秒更新倒计时显示
+      setInterval(() => {
+        updateCountdownDisplay();
+      }, 1000);
+    }
+    
+    // 渲染时间段列表
+    function renderTimeSlots() {
+      // 按开始时间排序
+      timeSlots.sort((a, b) => {
+        const timeA = convertTimeToMinutes(a.start);
+        const timeB = convertTimeToMinutes(b.start);
+        return timeA - timeB;
+      });
+      
+      if (timeSlots.length === 0) {
+        emptyState.classList.remove('hidden');
+        timeSlotsContainer.innerHTML = '';
+        timeSlotsContainer.appendChild(emptyState);
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      timeSlotsContainer.innerHTML = '';
+      
+      timeSlots.forEach((slot, index) => {
+        const slotElement = document.createElement('div');
+        slotElement.className = `rounded-lg p-4 flex justify-between items-center ${slot.type === 'focus' ? 'bg-primary/10 border-l-4 border-primary' : 'bg-secondary/10 border-l-4 border-secondary'}`;
+        slotElement.dataset.id = slot.id;
+        
+        const isCurrentSlot = isCurrentTimeInSlot(slot);
+        if (isCurrentSlot) {
+          slotElement.classList.add('ring-2', 'ring-yellow-400');
+        }
+        
+        slotElement.innerHTML = `
+          <div class="flex items-center">
+            <div class="mr-4 ${slot.type === 'focus' ? 'text-primary' : 'text-secondary'}">
+              <i class="fa fa-${slot.type === 'focus' ? 'briefcase' : 'coffee'} text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold">${slot.title}</h3>
+              <p class="text-gray-600">${slot.start} - ${slot.end}</p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button class="edit-btn p-2 text-gray-500 hover:text-primary focus:outline-none" data-id="${slot.id}">
+              <i class="fa fa-pencil"></i>
+            </button>
+            <button class="delete-btn p-2 text-gray-500 hover:text-red-500 focus:outline-none" data-id="${slot.id}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        `;
+        
+        timeSlotsContainer.appendChild(slotElement);
+      });
+      
+      // 添加编辑和删除按钮事件监听
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          editTimeSlot(id);
+        });
+      });
+      
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          deleteTimeSlot(id);
+        });
+      });
+    }
+    
+    // 渲染时间轴
+    function renderTimeline() {
+      timeline.innerHTML = '';
+      
+      if (timeSlots.length === 0) {
+        return;
+      }
+      
+      // 创建时间轴背景
+      const timelineWidth = timeline.offsetWidth;
+      const minutesInDay = 24 * 60;
+      
+      timeSlots.forEach(slot => {
+        const startMinutes = convertTimeToMinutes(slot.start);
+        const endMinutes = convertTimeToMinutes(slot.end);
+        const durationMinutes = endMinutes - startMinutes;
+        
+        // 计算位置和宽度
+        const left = (startMinutes / minutesInDay) * 100;
+        const width = (durationMinutes / minutesInDay) * 100;
+        
+        // 创建时间段元素
+        const slotElement = document.createElement('div');
+        slotElement.className = `absolute rounded-md flex items-center justify-center text-xs p-1 ${slot.type === 'focus' ? 'time-slot-focus' : 'time-slot-free'}`;
+        slotElement.style.left = `${left}%`;
+        slotElement.style.width = `${width}%`;
+        slotElement.style.height = '80%';
+        slotElement.style.top = '10%';
+        
+        // 检查是否是当前时间段
+        if (isCurrentTimeInSlot(slot)) {
+          slotElement.classList.add('time-slot-current');
+        }
+        
+        // 添加标题（如果有足够空间）
+        if (width > 3) {
+          slotElement.innerHTML = `<span class="whitespace-nowrap overflow-hidden text-ellipsis max-w-full">${slot.title}</span>`;
+        }
+        
+        timeline.appendChild(slotElement);
+      });
+    }
+    
+    // 更新统计信息
+    function updateStatistics() {
+      let totalFocusMinutes = 0;
+      let totalFreeMinutes = 0;
+      
+      timeSlots.forEach(slot => {
+        const durationMinutes = calculateDuration(slot.start, slot.end);
+        
+        if (slot.type === 'focus') {
+          totalFocusMinutes += durationMinutes;
+        } else {
+          totalFreeMinutes += durationMinutes;
+        }
+      });
+      
+      // 更新专注时间统计
+      focusTimeTotal.textContent = formatTimeFromMinutes(totalFocusMinutes);
+      const focusPercentage = Math.min((totalFocusMinutes / (24 * 60)) * 100, 100);
+      focusTimeProgress.style.width = `${focusPercentage}%`;
+      
+      // 更新自由时间统计
+      freeTimeTotal.textContent = formatTimeFromMinutes(totalFreeMinutes);
+      const freePercentage = Math.min((totalFreeMinutes / (24 * 60)) * 100, 100);
+      freeTimeProgress.style.width = `${freePercentage}%`;
+      
+      // 更新今日进度
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const dayPercentage = (currentMinutes / (24 * 60)) * 100;
+      dayProgress.textContent = `${Math.round(dayPercentage)}%`;
+      dayProgressBar.style.width = `${dayPercentage}%`;
+    }
+    
+    // 更新下一个时间段信息
+    function updateNextTimeSlot() {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      // 找出下一个时间段
+      let nextSlot = null;
+      let minTimeDiff = Infinity;
+      
+      timeSlots.forEach(slot => {
+        const slotStartMinutes = convertTimeToMinutes(slot.start);
+        let timeDiff;
+        
+        if (slotStartMinutes > currentMinutes) {
+          timeDiff = slotStartMinutes - currentMinutes;
+        } else {
+          // 如果当天没有下一个时间段，则显示明天的第一个时间段
+          timeDiff = (24 * 60 - currentMinutes) + slotStartMinutes;
+        }
+        
+        if (timeDiff < minTimeDiff) {
+          minTimeDiff = timeDiff;
+          nextSlot = slot;
+        }
+      });
+      
+      if (nextSlot) {
+        nextTimeSlotCard.classList.remove('hidden');
+        
+        const isTomorrow = convertTimeToMinutes(nextSlot.start) < currentMinutes;
+        const dayPrefix = isTomorrow ? '明天 ' : '';
+        
+        nextTimeSlotContent.innerHTML = `
+          <div class="flex items-center mb-2">
+            <div class="mr-3 ${nextSlot.type === 'focus' ? 'text-primary' : 'text-secondary'}">
+              <i class="fa fa-${nextSlot.type === 'focus' ? 'briefcase' : 'coffee'}"></i>
+            </div>
+            <div>
+              <h4 class="font-medium">${nextSlot.title}</h4>
+              <p class="text-sm text-gray-600">${dayPrefix}${nextSlot.start} - ${nextSlot.end}</p>
+            </div>
+          </div>
+          <div class="text-sm text-gray-500">
+            ${isTomorrow ? '明天' : '今天'}还有 ${formatTimeFromMinutes(minTimeDiff)}
+          </div>
+        `;
+      } else {
+        nextTimeSlotCard.classList.add('hidden');
+      }
+    }
+    
+    // 开始倒计时
+    function startCountdown() {
+      updateCountdown();
+      updateCountdownDisplay();
+    }
+    
+    // 更新倒计时逻辑
+    function updateCountdown() {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      // 检查当前是否在某个时间段内
+      const currentSlot = getCurrentTimeSlot();
+      
+      if (currentSlot) {
+        // 当前在时间段内，显示到结束的倒计时
+        const endMinutes = convertTimeToMinutes(currentSlot.end);
+        const remainingMinutes = endMinutes - currentMinutes;
+        
+        if (remainingMinutes > 0) {
+          window.countdownType = 'end';
+          window.countdownMinutes = remainingMinutes;
+          statusText.textContent = `当前状态：${currentSlot.type === 'focus' ? '专注中' : '自由活动'}`;
+          countdownLabel.textContent = `结束倒计时`;
+          return;
+        }
+      }
+      
+      // 当前不在时间段内，显示到下一个时间段的倒计时
+      const nextSlot = getNextTimeSlot();
+      
+      if (nextSlot) {
+        let timeDiff;
+        const nextStartMinutes = convertTimeToMinutes(nextSlot.start);
+        
+        if (nextStartMinutes > currentMinutes) {
+          timeDiff = nextStartMinutes - currentMinutes;
+        } else {
+          // 如果当天没有下一个时间段，则显示明天的第一个时间段
+          timeDiff = (24 * 60 - currentMinutes) + nextStartMinutes;
+        }
+        
+        window.countdownType = 'next';
+        window.countdownMinutes = timeDiff;
+        statusText.textContent = '当前状态：空闲';
+        countdownLabel.textContent = `到下一时段`;
+      } else {
+        // 没有下一个时间段
+        window.countdownType = 'none';
+        statusText.textContent = '当前状态：空闲';
+        countdownLabel.textContent = '无计划时段';
+      }
+    }
+    
+    // 更新倒计时显示
+    function updateCountdownDisplay() {
+      if (window.countdownType === 'none') {
+        countdown.textContent = '--:--:--';
+        return;
+      }
+      
+      let remainingSeconds = window.countdownMinutes * 60;
+      
+      // 计算当前秒数
+      const now = new Date();
+      const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      
+      if (window.countdownType === 'end') {
+        const currentSlot = getCurrentTimeSlot();
+        if (currentSlot) {
+          const endSeconds = convertTimeToSeconds(currentSlot.end);
+          remainingSeconds = endSeconds - currentSeconds;
+        }
+      } else if (window.countdownType === 'next') {
+        const nextSlot = getNextTimeSlot();
+        if (nextSlot) {
+          let nextStartSeconds = convertTimeToSeconds(nextSlot.start);
+          
+          if (nextStartSeconds < currentSeconds) {
+            // 下一个时间段是明天
+            nextStartSeconds += 24 * 3600;
+          }
+          
+          remainingSeconds = nextStartSeconds - currentSeconds;
+        }
+      }
+      
+      if (remainingSeconds < 0) {
+        // 倒计时结束，更新状态
+        updateCountdown();
+        return;
+      }
+      
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+      const seconds = remainingSeconds % 60;
+      
+      countdown.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // 获取当前时间段
+    function getCurrentTimeSlot() {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeString = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+      
+      return timeSlots.find(slot => {
+        return isTimeInRange(currentTimeString, slot.start, slot.end);
+      });
+    }
+    
+    // 获取下一个时间段
+    function getNextTimeSlot() {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      // 找出下一个时间段
+      let nextSlot = null;
+      let minTimeDiff = Infinity;
+      
+      timeSlots.forEach(slot => {
+        const slotStartMinutes = convertTimeToMinutes(slot.start);
+        let timeDiff;
+        
+        if (slotStartMinutes > currentMinutes) {
+          timeDiff = slotStartMinutes - currentMinutes;
+        } else {
+          // 如果当天没有下一个时间段，则显示明天的第一个时间段
+          timeDiff = (24 * 60 - currentMinutes) + slotStartMinutes;
+        }
+        
+        if (timeDiff < minTimeDiff) {
+          minTimeDiff = timeDiff;
+          nextSlot = slot;
+        }
+      });
+      
+      return nextSlot;
+    }
+    
+    // 检查当前时间是否在时间段内
+    function isCurrentTimeInSlot(slot) {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTimeString = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+      
+      return isTimeInRange(currentTimeString, slot.start, slot.end);
+    }
+    
+    // 检查时间是否在范围内
+    function isTimeInRange(time, start, end) {
+      const timeMinutes = convertTimeToMinutes(time);
+      const startMinutes = convertTimeToMinutes(start);
+      const endMinutes = convertTimeToMinutes(end);
+      
+      if (startMinutes <= endMinutes) {
+        // 时间段在同一天内
+        return timeMinutes >= startMinutes && timeMinutes < endMinutes;
+      } else {
+        // 时间段跨越午夜
+        return timeMinutes >= startMinutes || timeMinutes < endMinutes;
+      }
+    }
+    
+    // 转换时间字符串为分钟数
+    function convertTimeToMinutes(timeString) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+    
+    // 转换时间字符串为秒数
+    function convertTimeToSeconds(timeString) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      return hours * 3600 + minutes * 60;
+    }
+    
+    // 转换分钟数为时间字符串
+    function formatTimeFromMinutes(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+    
+    // 计算时间段持续时间（分钟）
+    function calculateDuration(start, end) {
+      const startMinutes = convertTimeToMinutes(start);
+      const endMinutes = convertTimeToMinutes(end);
+      
+      if (endMinutes >= startMinutes) {
+        return endMinutes - startMinutes;
+      } else {
+        // 跨越午夜
+        return (24 * 60 - startMinutes) + endMinutes;
+      }
+    }
+    
+    // 检查时间段冲突
+    function checkConflicts(newSlot) {
+      const conflicts = [];
+      
+      timeSlots.forEach(slot => {
+        // 跳过正在编辑的时间段
+        if (currentEditingId && slot.id === currentEditingId) {
+          return;
+        }
+        
+        // 检查新时间段是否与现有时间段冲突
+        if (isOverlapping(newSlot, slot)) {
+          conflicts.push(slot);
+        }
+      });
+      
+      return conflicts;
+    }
+    
+    // 检查两个时间段是否重叠
+    function isOverlapping(slot1, slot2) {
+      const slot1Start = convertTimeToMinutes(slot1.start);
+      const slot1End = convertTimeToMinutes(slot1.end);
+      const slot2Start = convertTimeToMinutes(slot2.start);
+      const slot2End = convertTimeToMinutes(slot2.end);
+      
+      // 处理跨越午夜的情况
+      if (slot1Start <= slot1End) {
+        // slot1 不跨越午夜
+        if (slot2Start <= slot2End) {
+          // slot2 也不跨越午夜
+          return (slot1Start < slot2End) && (slot1End > slot2Start);
+        } else {
+          // slot2 跨越午夜
+          return (slot1Start < slot2End) || (slot1End > slot2Start);
+        }
+      } else {
+        // slot1 跨越午夜
+        if (slot2Start <= slot2End) {
+          // slot2 不跨越午夜
+          return (slot1Start < slot2End) || (slot1End > slot2Start);
+        } else {
+          // slot2 也跨越午夜
+          return true; // 两个跨越午夜的时间段总是重叠
+        }
+      }
+    }
+    
+    // 打开添加时间段模态框
+    function openAddTimeSlotModal() {
+      currentEditingId = null;
+      modalTitle.textContent = '添加时间段';
+      timeSlotForm.reset();
+      
+      // 设置默认时间为当前时间和当前时间+1小时
+      const now = new Date();
+      const currentHour = now.getHours();
+      const nextHour = (currentHour + 1) % 24;
+      
+      document.getElementById('time-slot-start').value = `${currentHour.toString().padStart(2, '0')}:00`;
+      document.getElementById('time-slot-end').value = `${nextHour.toString().padStart(2, '0')}:00`;
+      
+      openModal(timeSlotModal, modalContent);
+    }
+    
+    // 打开编辑时间段模态框
+    function editTimeSlot(id) {
+      const slot = timeSlots.find(s => s.id === id);
+      
+      if (!slot) return;
+      
+      currentEditingId = id;
+      modalTitle.textContent = '编辑时间段';
+      
+      document.getElementById('time-slot-id').value = slot.id;
+      document.getElementById('time-slot-title').value = slot.title;
+      document.getElementById('time-slot-start').value = slot.start;
+      document.getElementById('time-slot-end').value = slot.end;
+      document.querySelector(`input[name="time-slot-type"][value="${slot.type}"]`).checked = true;
+      
+      openModal(timeSlotModal, modalContent);
+    }
+    
+    // 准备删除时间段
+    function deleteTimeSlot(id) {
+      currentDeletingId = id;
+      openModal(deleteModal, deleteModalContent);
+    }
+    
+    // 确认删除时间段
+    function confirmDeleteTimeSlot() {
+      if (!currentDeletingId) return;
+      
+      timeSlots = timeSlots.filter(slot => slot.id !== currentDeletingId);
+      saveTimeSlots();
+      renderTimeSlots();
+      renderTimeline();
+      updateStatistics();
+      updateNextTimeSlot();
+      updateCountdown();
+      
+      closeModal(deleteModal, deleteModalContent);
+      currentDeletingId = null;
+    }
+    
+    // 保存时间段
+    function saveTimeSlot(event) {
+      event.preventDefault();
+      
+      const id = document.getElementById('time-slot-id').value || generateId();
+      const title = document.getElementById('time-slot-title').value;
+      const start = document.getElementById('time-slot-start').value;
+      const end = document.getElementById('time-slot-end').value;
+      const type = document.querySelector('input[name="time-slot-type"]:checked').value;
+      
+      const newSlot = {
+        id,
+        title,
+        start,
+        end,
+        type
+      };
+      
+      // 检查时间段冲突
+      const conflicts = checkConflicts(newSlot);
+      
+      if (conflicts.length > 0) {
+        // 显示冲突提示
+        conflictingSlots = conflicts;
+        showConflictModal(newSlot);
+        return;
+      }
+      
+      // 保存时间段
+      if (currentEditingId) {
+        // 编辑现有时间段
+        const index = timeSlots.findIndex(slot => slot.id === currentEditingId);
+        if (index !== -1) {
+          timeSlots[index] = newSlot;
+        }
+      } else {
+        // 添加新时间段
+        timeSlots.push(newSlot);
+      }
+      
+      saveTimeSlots();
+      renderTimeSlots();
+      renderTimeline();
+      updateStatistics();
+      updateNextTimeSlot();
+      updateCountdown();
+      
+      closeModal(timeSlotModal, modalContent);
+    }
+    
+    // 显示冲突提示模态框
+    function showConflictModal(newSlot) {
+      conflictList.innerHTML = '';
+      
+      conflictingSlots.forEach(slot => {
+        const item = document.createElement('div');
+        item.className = `p-2 mb-2 rounded ${slot.type === 'focus' ? 'bg-primary/10' : 'bg-secondary/10'}`;
+        item.innerHTML = `
+          <div class="font-medium">${slot.title}</div>
+          <div class="text-sm text-gray-600">${slot.start} - ${slot.end}</div>
+        `;
+        conflictList.appendChild(item);
+      });
+      
+      // 保存新时间段到全局变量，以便在覆盖时使用
+      window.newTimeSlot = newSlot;
+      
+      openModal(conflictModal, conflictModalContent);
+    }
+    
+    // 覆盖冲突的时间段
+    function overrideConflictingSlots() {
+      if (!window.newTimeSlot) return;
+      
+      // 删除所有冲突的时间段
+      timeSlots = timeSlots.filter(slot => {
+        // 保留正在编辑的时间段（如果有）
+        if (currentEditingId && slot.id === currentEditingId) {
+          return true;
+        }
+        
+        // 删除所有冲突的时间段
+        return !conflictingSlots.some(conflict => conflict.id === slot.id);
+      });
+      
+      // 添加新时间段
+      if (currentEditingId) {
+        // 编辑现有时间段
+        const index = timeSlots.findIndex(slot => slot.id === currentEditingId);
+        if (index !== -1) {
+          timeSlots[index] = window.newTimeSlot;
+        }
+      } else {
+        // 添加新时间段
+        timeSlots.push(window.newTimeSlot);
+      }
+      
+      saveTimeSlots();
+      renderTimeSlots();
+      renderTimeline();
+      updateStatistics();
+      updateNextTimeSlot();
+      updateCountdown();
+      
+      closeModal(conflictModal, conflictModalContent);
+      closeModal(timeSlotModal, modalContent);
+      
+      window.newTimeSlot = null;
+      conflictingSlots = [];
+    }
+    
+    // 保存时间段到本地存储
+    function saveTimeSlots() {
+      localStorage.setItem('timeSlots', JSON.stringify(timeSlots));
+    }
+    
+    // 生成唯一ID
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+    
+    // 打开模态框
+    function openModal(modal, content) {
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+    
+    // 关闭模态框
+    function closeModal(modal, content) {
+      content.classList.remove('scale-100', 'opacity-100');
+      content.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+    
+    // 事件监听
+    document.addEventListener('DOMContentLoaded', initApp);
+    addTimeSlotBtn.addEventListener('click', openAddTimeSlotModal);
+    closeModalBtn.addEventListener('click', () => closeModal(timeSlotModal, modalContent));
+    cancelBtn.addEventListener('click', () => closeModal(timeSlotModal, modalContent));
+    timeSlotForm.addEventListener('submit', saveTimeSlot);
+    cancelDeleteBtn.addEventListener('click', () => closeModal(deleteModal, deleteModalContent));
+    confirmDeleteBtn.addEventListener('click', confirmDeleteTimeSlot);
+    cancelConflictBtn.addEventListener('click', () => closeModal(conflictModal, conflictModalContent));
+    overrideConflictBtn.addEventListener('click', overrideConflictingSlots);
+    
+    // 点击模态框背景关闭模态框
+    timeSlotModal.addEventListener('click', (e) => {
+      if (e.target === timeSlotModal) {
+        closeModal(timeSlotModal, modalContent);
+      }
+    });
+    
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) {
+        closeModal(deleteModal, deleteModalContent);
+      }
+    });
+    
+    conflictModal.addEventListener('click', (e) => {
+      if (e.target === conflictModal) {
+        closeModal(conflictModal, conflictModalContent);
+      }
+    });
+    
+    // 窗口大小改变时重新渲染时间轴
+    window.addEventListener('resize', () => {
+      renderTimeline();
+    });
+  </script>
+</body>
+</html>
