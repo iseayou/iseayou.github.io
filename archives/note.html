@@ -106,6 +106,13 @@
                         </button>
                         <button 
                             type="button" 
+                            id="cutAllBtn" 
+                            class="btn bg-orange-500 text-white hover:bg-orange-600 text-sm py-1"
+                        >
+                            <i class="fa fa-cut mr-1"></i> 剪贴
+                        </button>
+                        <button 
+                            type="button" 
                             id="clearAllBtn" 
                             class="btn btn-danger text-sm py-1"
                         >
@@ -139,6 +146,7 @@
             const noteCount = document.getElementById('noteCount');
             const emptyState = document.getElementById('emptyState');
             const copyAllBtn = document.getElementById('copyAllBtn');
+            const cutAllBtn = document.getElementById('cutAllBtn');
             
             // 格式化日期时间函数
             function formatDateTime(date) {
@@ -300,13 +308,64 @@
                     
                     // 2秒后恢复按钮状态
                     setTimeout(() => {
-                        copyAllBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 全部复制';
+                        copyAllBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 复制';
                         copyAllBtn.disabled = false;
                         copyAllBtn.classList.remove('bg-green-500');
                     }, 2000);
                 }).catch(err => {
                     console.error('复制失败:', err);
                     alert('复制失败，请手动复制');
+                });
+            }
+            
+            // 剪贴笔记函数（复制并清空）
+            function cutAllNotes() {
+                const notes = JSON.parse(localStorage.getItem('notes')) || [];
+                if (notes.length === 0) {
+                    alert('没有可剪贴的笔记记录');
+                    return;
+                }
+                
+                // 确认操作
+                if (!confirm('确定要剪贴所有笔记吗？此操作将复制所有笔记到剪贴板并删除所有记录。')) {
+                    return;
+                }
+                
+                // 生成倒序的Markdown格式笔记，最新的在最上面
+                let markdownContent = '';
+                
+                // 先按时间戳排序，确保最新的在最下面
+                const sortedNotes = [...notes].sort((a, b) => {
+                    return new Date(a.timestamp) - new Date(b.timestamp);
+                });
+                
+                // 遍历排序后的笔记
+                sortedNotes.forEach((note) => {
+                    const date = new Date(note.timestamp);
+                    const formattedDate = formatDateTime(date);
+                    markdownContent += `${formattedDate}：${note.content}\n\n`;
+                });
+                
+                // 复制到剪贴板
+                navigator.clipboard.writeText(markdownContent).then(() => {
+                    // 清空所有笔记
+                    localStorage.removeItem('notes');
+                    loadNotes();
+                    
+                    // 显示剪贴成功提示
+                    cutAllBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 已剪贴';
+                    cutAllBtn.disabled = true;
+                    cutAllBtn.classList.add('bg-green-500');
+                    
+                    // 2秒后恢复按钮状态
+                    setTimeout(() => {
+                        cutAllBtn.innerHTML = '<i class="fa fa-cut mr-1"></i> 剪贴';
+                        cutAllBtn.disabled = false;
+                        cutAllBtn.classList.remove('bg-green-500');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('剪贴失败:', err);
+                    alert('剪贴失败，请手动复制');
                 });
             }
             
@@ -319,6 +378,8 @@
             clearAllBtn.addEventListener('click', clearAllNotes);
             
             copyAllBtn.addEventListener('click', copyAllNotes);
+            
+            cutAllBtn.addEventListener('click', cutAllNotes);
             
             // 初始化加载笔记
             loadNotes();
