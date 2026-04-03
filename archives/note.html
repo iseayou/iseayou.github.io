@@ -102,21 +102,21 @@
                             id="copyAllBtn" 
                             class="btn bg-blue-500 text-white hover:bg-blue-600 text-sm py-1"
                         >
-                            <i class="fa fa-copy mr-1"></i> 复制
+                            复制
                         </button>
                         <button 
                             type="button" 
                             id="cutAllBtn" 
                             class="btn bg-orange-500 text-white hover:bg-orange-600 text-sm py-1"
                         >
-                            <i class="fa fa-cut mr-1"></i> 剪贴
+                            剪贴
                         </button>
                         <button 
                             type="button" 
                             id="clearAllBtn" 
                             class="btn btn-danger text-sm py-1"
                         >
-                            <i class="fa fa-trash mr-1"></i> 清空
+                            清空
                         </button>
                     </div>
                 </div>
@@ -302,13 +302,13 @@
                 // 复制到剪贴板
                 navigator.clipboard.writeText(markdownContent).then(() => {
                     // 显示复制成功提示
-                    copyAllBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 已复制';
+                    copyAllBtn.textContent = '已复制';
                     copyAllBtn.disabled = true;
                     copyAllBtn.classList.add('bg-green-500');
                     
                     // 2秒后恢复按钮状态
                     setTimeout(() => {
-                        copyAllBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 复制';
+                        copyAllBtn.textContent = '复制';
                         copyAllBtn.disabled = false;
                         copyAllBtn.classList.remove('bg-green-500');
                     }, 2000);
@@ -353,13 +353,13 @@
                     loadNotes();
                     
                     // 显示剪贴成功提示
-                    cutAllBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 已剪贴';
+                    cutAllBtn.textContent = '已剪贴';
                     cutAllBtn.disabled = true;
                     cutAllBtn.classList.add('bg-green-500');
                     
                     // 2秒后恢复按钮状态
                     setTimeout(() => {
-                        cutAllBtn.innerHTML = '<i class="fa fa-cut mr-1"></i> 剪贴';
+                        cutAllBtn.textContent = '剪贴';
                         cutAllBtn.disabled = false;
                         cutAllBtn.classList.remove('bg-green-500');
                     }, 2000);
