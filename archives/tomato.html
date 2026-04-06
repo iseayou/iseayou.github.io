@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄时钟 - 提高工作效率的时间管理工具</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6', // 蓝色 - 主色调
+                        secondary: '#10b981', // 绿色 - 完成状态
+                        accent: '#f59e0b', // 橙色 - 进行中
+                        danger: '#ef4444', // 红色 - 结束/删除
+                        light: '#f3f4f6', // 浅灰 - 背景
+                        dark: '#1f2937', // 深灰 - 文字
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .shadow-soft {
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .progress-ring-circle {
+                transition: stroke-dashoffset 0.5s ease;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen font-sans text-dark">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 头部标题 -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-primary text-shadow mb-2">番茄时钟</h1>
+            <p class="text-gray-600">提高工作效率的时间管理工具</p>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧：计时器区域 -->
+            <div class="lg:col-span-2">
+                <div class="glass rounded-2xl shadow-soft p-6 mb-6">
+                    <!-- 计时器显示 -->
+                    <div class="flex flex-col items-center justify-center mb-6">
+                        <div class="relative w-64 h-64 mb-4">
+                            <!-- 进度环 -->
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle
+                                    class="text-gray-200"
+                                    stroke-width="8"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                    r="40"
+                                    cx="50"
+                                    cy="50"
+                                />
+                                <circle
+                                    id="progress-ring"
+                                    class="progress-ring-circle text-primary"
+                                    stroke-width="8"
+                                    stroke="currentColor"
+                                    fill="transparent"
+                                    r="40"
+                                    cx="50"
+                                    cy="50"
+                                    stroke-dasharray="251.2"
+                                    stroke-dashoffset="0"
+                                />
+                            </svg>
+                            <!-- 时间显示 -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="timer-display" class="text-5xl font-bold text-primary">25:00</span>
+                                <span id="timer-status" class="text-lg text-gray-600 mt-2">准备开始</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 当前任务显示 -->
+                        <div id="current-task" class="text-center mb-4 min-h-8">
+                            <p class="text-lg font-medium">未选择任务</p>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="flex space-x-4">
+                            <button id="start-btn" class="bg-primary hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-full transition-all duration-300 flex items-center">
+                                <i class="fa fa-play mr-2"></i> 开始
+                            </button>
+                            <button id="pause-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-full transition-all duration-300 flex items-center hidden">
+                                <i class="fa fa-pause mr-2"></i> 暂停
+                            </button>
+                            <button id="stop-btn" class="bg-danger hover:bg-red-600 text-white font-medium py-2 px-6 rounded-full transition-all duration-300 flex items-center hidden">
+                                <i class="fa fa-stop mr-2"></i> 结束
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+
+            </div>
+            
+            <!-- 右侧：任务管理 -->
+            <div class="lg:col-span-1">
+                <!-- 添加任务 -->
+                <div class="glass rounded-2xl shadow-soft p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-plus-circle text-primary mr-2"></i> 添加任务
+                    </h2>
+                    <form id="task-form" class="space-y-4">
+                        <div>
+                            <label for="task-name" class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
+                            <input type="text" id="task-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="输入任务名称" required>
+                        </div>
+                        <div>
+                            <label for="task-pomodoros" class="block text-sm font-medium text-gray-700 mb-1">计划番茄数量</label>
+                            <input type="number" id="task-pomodoros" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" min="1" value="1" required>
+                        </div>
+                        <button type="submit" class="w-full bg-primary hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+                            <i class="fa fa-plus mr-2"></i> 添加任务
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- 任务列表 -->
+                <div class="glass rounded-2xl shadow-soft p-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <i class="fa fa-tasks text-primary mr-2"></i> 任务列表
+                        </h2>
+                        <button id="clear-tasks-btn" class="text-sm text-danger hover:text-red-700 transition-colors duration-300 flex items-center">
+                            <i class="fa fa-trash-o mr-1"></i> 清空
+                        </button>
+                    </div>
+                    <div id="tasks-container" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- 任务将通过JavaScript动态添加 -->
+                        <div class="text-gray-500 text-center py-4" id="no-tasks-message">暂无任务</div>
+                    </div>
+                </div>
+                
+                <!-- 番茄记录 -->
+                <div class="glass rounded-2xl shadow-soft p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <i class="fa fa-clock-o text-primary mr-2"></i> 番茄记录
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button id="copy-records-btn" class="text-sm text-primary hover:text-blue-700 transition-colors duration-300 flex items-center">
+                                <i class="fa fa-copy mr-1"></i> 复制
+                            </button>
+                            <button id="clear-records-btn" class="text-sm text-danger hover:text-red-700 transition-colors duration-300 flex items-center">
+                                <i class="fa fa-trash-o mr-1"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                    <div id="records-container" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- 记录将通过JavaScript动态添加 -->
+                        <div class="text-gray-500 text-center py-4" id="no-records-message">暂无记录</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 页脚 -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>© 2025 番茄时钟 - 让工作更高效</p>
+        </footer>
+    </div>
+    
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center z-50 max-w-xs">
+        <i id="notification-icon" class="fa fa-check-circle text-secondary mr-3 text-xl"></i>
+        <p id="notification-message" class="text-gray-800"></p>
+    </div>
+
+    <script>
+        // DOM 元素
+        const timerDisplay = document.getElementById('timer-display');
+        const timerStatus = document.getElementById('timer-status');
+        const progressRing = document.getElementById('progress-ring');
+        const currentTaskElement = document.getElementById('current-task');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const taskForm = document.getElementById('task-form');
+        const tasksContainer = document.getElementById('tasks-container');
+        const noTasksMessage = document.getElementById('no-tasks-message');
+        const recordsContainer = document.getElementById('records-container');
+        const noRecordsMessage = document.getElementById('no-records-message');
+        const clearTasksBtn = document.getElementById('clear-tasks-btn');
+        const clearRecordsBtn = document.getElementById('clear-records-btn');
+        const copyRecordsBtn = document.getElementById('copy-records-btn');
+        const notification = document.getElementById('notification');
+        const notificationIcon = document.getElementById('notification-icon');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        // 应用状态
+        let timer = null;
+        let currentTime = 25 * 60; // 25分钟（秒）
+        const workDuration = 25 * 60; // 工作时长（秒）
+        const breakDuration = 5 * 60; // 休息时长（秒）
+        let isWorkSession = true;
+        let isPaused = false;
+        let currentTask = null;
+        let tasks = [];
+        let records = [];
+        
+        // 初始化应用
+        function initApp() {
+            loadData();
+            renderTasks();
+            renderRecords();
+            updateProgressRing();
+            setupEventListeners();
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 计时器控制
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            stopBtn.addEventListener('click', stopTimer);
+            
+            // 任务表单
+            taskForm.addEventListener('submit', addTask);
+            
+            // 清空按钮
+            clearTasksBtn.addEventListener('click', clearTasks);
+            clearRecordsBtn.addEventListener('click', clearRecords);
+            copyRecordsBtn.addEventListener('click', copyRecords);
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            if (!currentTask) {
+                showNotification('请先选择一个任务', 'warning');
+                return;
+            }
+            
+            if (currentTask.isCompleted) {
+                showNotification('已完成的任务不能再开始番茄', 'warning');
+                return;
+            }
+            
+            if (isPaused) {
+                isPaused = false;
+                timerStatus.textContent = isWorkSession ? '工作中...' : '休息中...';
+            } else {
+                // 新的番茄开始
+                isWorkSession = true;
+                currentTime = workDuration;
+                timerStatus.textContent = '工作中...';
+                updateProgressRing();
+            }
+            
+            // 更新UI
+            startBtn.classList.add('hidden');
+            pauseBtn.classList.remove('hidden');
+            stopBtn.classList.remove('hidden');
+            
+            // 启动计时器
+            timer = setInterval(() => {
+                currentTime--;
+                updateTimerDisplay();
+                updateProgressRing();
+                
+                if (currentTime <= 0) {
+                    if (isWorkSession) {
+                        // 工作结束，记录番茄
+                        endWorkSession();
+                    } else {
+                        // 休息结束，开始工作
+                        endBreakSession();
+                    }
+                }
+            }, 1000);
+        }
+        
+        // 暂停计时器
+        function pauseTimer() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+                isPaused = true;
+                timerStatus.textContent = '已暂停';
+                
+                // 更新UI
+                startBtn.classList.remove('hidden');
+                pauseBtn.classList.add('hidden');
+            }
+        }
+        
+        // 停止计时器
+        function stopTimer() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            
+            // 重置状态
+            isPaused = false;
+            isWorkSession = true;
+            currentTime = workDuration;
+            timerStatus.textContent = '准备开始';
+            updateTimerDisplay();
+            updateProgressRing();
+            
+            // 更新UI
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+            stopBtn.classList.add('hidden');
+            
+            // 如果是中途停止，不记录番茄
+            if (currentTask && !isPaused) {
+                showNotification('番茄已结束，未计入总数', 'info');
+            }
+        }
+        
+        // 工作会话结束
+        function endWorkSession() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            
+            // 记录完成的番茄
+            if (currentTask) {
+                const record = {
+                    id: Date.now(),
+                    taskId: currentTask.id,
+                    taskName: currentTask.name,
+                    timestamp: new Date().toISOString(),
+                    completed: true
+                };
+                
+                records.push(record);
+                currentTask.completedPomodoros++;
+                saveData();
+                renderRecords();
+                renderTasks();
+                
+                showNotification(`恭喜！完成一个番茄 🍅`, 'success');
+            }
+            
+            // 开始休息
+            isWorkSession = false;
+            currentTime = breakDuration;
+            timerStatus.textContent = '休息中...';
+            updateTimerDisplay();
+            updateProgressRing();
+            
+            // 启动休息计时器
+            timer = setInterval(() => {
+                currentTime--;
+                updateTimerDisplay();
+                updateProgressRing();
+                
+                if (currentTime <= 0) {
+                    endBreakSession();
+                }
+            }, 1000);
+        }
+        
+        // 休息会话结束
+        function endBreakSession() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            
+            // 重置状态
+            isWorkSession = true;
+            currentTime = workDuration;
+            timerStatus.textContent = '准备开始';
+            updateTimerDisplay();
+            updateProgressRing();
+            
+            // 更新UI
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+            stopBtn.classList.add('hidden');
+            
+            showNotification('休息结束，准备开始新的番茄', 'info');
+        }
+        
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = currentTime % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // 更新进度环
+        function updateProgressRing() {
+            const totalTime = isWorkSession ? workDuration : breakDuration;
+            const progress = (totalTime - currentTime) / totalTime;
+            const circumference = 2 * Math.PI * 40; // 2πr，r=40
+            const offset = circumference - progress * circumference;
+            
+            progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+            progressRing.style.strokeDashoffset = offset;
+            
+            // 根据会话类型更改颜色
+            if (isWorkSession) {
+                progressRing.classList.remove('text-accent', 'text-secondary');
+                progressRing.classList.add('text-primary');
+                timerDisplay.classList.remove('text-accent', 'text-secondary');
+                timerDisplay.classList.add('text-primary');
+            } else {
+                progressRing.classList.remove('text-primary', 'text-secondary');
+                progressRing.classList.add('text-accent');
+                timerDisplay.classList.remove('text-primary', 'text-secondary');
+                timerDisplay.classList.add('text-accent');
+            }
+        }
+        
+        // 添加任务
+        function addTask(e) {
+            e.preventDefault();
+            
+            const taskName = document.getElementById('task-name').value.trim();
+            const plannedPomodoros = parseInt(document.getElementById('task-pomodoros').value);
+            
+            if (!taskName) {
+                showNotification('请输入任务名称', 'warning');
+                return;
+            }
+            
+            const task = {
+                id: Date.now(),
+                name: taskName,
+                plannedPomodoros,
+                completedPomodoros: 0,
+                createdAt: new Date().toISOString(),
+                isActive: false,
+                isCompleted: false
+            };
+            
+            tasks.push(task);
+            saveData();
+            renderTasks();
+            
+            // 重置表单
+            taskForm.reset();
+            
+            showNotification('任务添加成功', 'success');
+        }
+        
+        // 选择任务
+        function selectTask(taskId) {
+            // 如果计时器正在运行，不允许切换任务
+            if (timer && !isPaused) {
+                showNotification('请先结束当前番茄', 'warning');
+                return;
+            }
+            
+            const task = tasks.find(t => t.id === taskId);
+            
+            // 检查任务是否已完成
+            if (task && task.isCompleted) {
+                showNotification('已完成的任务不能再开始番茄', 'warning');
+                return;
+            }
+            
+            // 重置当前任务状态
+            tasks.forEach(task => {
+                task.isActive = task.id === taskId;
+            });
+            
+            currentTask = tasks.find(task => task.id === taskId);
+            
+            // 更新UI
+            if (currentTask) {
+                currentTaskElement.innerHTML = `<p class="text-lg font-medium">${currentTask.name}</p>
+                                               <p class="text-sm text-gray-500">${currentTask.completedPomodoros}/${currentTask.plannedPomodoros} 番茄</p>`;
+            } else {
+                currentTaskElement.innerHTML = '<p class="text-lg font-medium">未选择任务</p>';
+            }
+            
+            saveData();
+            renderTasks();
+        }
+        
+        // 切换任务完成状态
+        function toggleTaskComplete(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            
+            if (!task) return;
+            
+            // 如果是当前正在进行的任务，先停止计时器
+            if (currentTask && currentTask.id === taskId && timer) {
+                stopTimer();
+            }
+            
+            // 切换完成状态
+            task.isCompleted = !task.isCompleted;
+            
+            // 如果标记为完成，取消激活状态
+            if (task.isCompleted) {
+                task.isActive = false;
+                
+                // 如果是当前任务，清除选择
+                if (currentTask && currentTask.id === taskId) {
+                    currentTask = null;
+                    currentTaskElement.innerHTML = '<p class="text-lg font-medium">未选择任务</p>';
+                }
+            }
+            
+            saveData();
+            renderTasks();
+            
+            showNotification(
+                task.isCompleted ? '任务已标记为完成' : '任务已重新激活',
+                'success'
+            );
+        }
+        
+        // 删除任务
+        function deleteTask(taskId) {
+            // 如果是当前正在进行的任务，先停止计时器
+            if (currentTask && currentTask.id === taskId && timer) {
+                stopTimer();
+            }
+            
+            // 如果删除的是当前任务，清除选择
+            if (currentTask && currentTask.id === taskId) {
+                currentTask = null;
+                currentTaskElement.innerHTML = '<p class="text-lg font-medium">未选择任务</p>';
+            }
+            
+            tasks = tasks.filter(task => task.id !== taskId);
+            saveData();
+            renderTasks();
+            
+            showNotification('任务已删除', 'info');
+        }
+        
+        // 清空任务列表
+        function clearTasks() {
+            if (tasks.length === 0) {
+                showNotification('任务列表已为空', 'info');
+                return;
+            }
+            
+            if (confirm('确定要清空所有任务吗？此操作不可撤销。')) {
+                // 如果有正在进行的任务，先停止计时器
+                if (timer) {
+                    stopTimer();
+                }
+                
+                tasks = [];
+                currentTask = null;
+                currentTaskElement.innerHTML = '<p class="text-lg font-medium">未选择任务</p>';
+                saveData();
+                renderTasks();
+                
+                showNotification('任务列表已清空', 'info');
+            }
+        }
+        
+        // 清空番茄记录
+        function clearRecords() {
+            if (records.length === 0) {
+                showNotification('记录列表已为空', 'info');
+                return;
+            }
+            
+            if (confirm('确定要清空所有番茄记录吗？此操作不可撤销。')) {
+                records = [];
+                saveData();
+                renderRecords();
+                
+                showNotification('番茄记录已清空', 'info');
+            }
+        }
+        
+        // 复制番茄记录
+        function copyRecords() {
+            if (records.length === 0) {
+                showNotification('没有可复制的记录', 'warning');
+                return;
+            }
+            
+            const recordsText = records
+                .map(record => {
+                    const date = new Date(record.timestamp).toLocaleString('zh-CN');
+                    return `${date} - ${record.taskName}`;
+                })
+                .join('\n');
+            
+            navigator.clipboard.writeText(recordsText)
+                .then(() => {
+                    showNotification('记录已复制到剪贴板', 'success');
+                })
+                .catch(() => {
+                    showNotification('复制失败，请手动复制', 'error');
+                });
+        }
+        
+        // 渲染任务列表
+        function renderTasks() {
+            tasksContainer.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                noTasksMessage.classList.remove('hidden');
+                tasksContainer.appendChild(noTasksMessage);
+                return;
+            }
+            
+            noTasksMessage.classList.add('hidden');
+            
+            tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `bg-white rounded-lg p-4 shadow-sm border-l-4 ${task.isActive ? 'border-primary' : 'border-transparent'} hover:border-primary transition-all duration-300`;
+                
+                const progress = task.plannedPomodoros > 0 
+                    ? Math.min(100, Math.round((task.completedPomodoros / task.plannedPomodoros) * 100)) 
+                    : 0;
+                
+                // 根据任务状态设置样式
+                const taskStatusClass = task.isCompleted 
+                    ? 'opacity-70 bg-gray-50' 
+                    : (task.isActive ? 'border-primary' : 'border-transparent');
+                
+                const taskNameClass = task.isCompleted 
+                    ? 'text-gray-500 line-through' 
+                    : (task.isActive ? 'text-primary' : 'text-gray-800');
+                
+                taskElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-medium ${taskNameClass}">${task.name}</h3>
+                            <div class="flex items-center mt-1 text-sm text-gray-500">
+                                <span class="flex items-center">
+                                    <i class="fa fa-check-circle text-secondary mr-1"></i> ${task.completedPomodoros}
+                                </span>
+                                <span class="mx-1">/</span>
+                                <span>${task.plannedPomodoros} 番茄</span>
+                                ${task.isCompleted ? '<span class="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">已完成</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            ${!task.isCompleted ? `
+                                <button class="text-primary hover:text-blue-700 transition-colors duration-300" onclick="selectTask(${task.id})" title="选择任务">
+                                    <i class="fa fa-play-circle"></i>
+                                </button>
+                            ` : ''}
+                            <button class="text-secondary hover:text-green-700 transition-colors duration-300" onclick="toggleTaskComplete(${task.id})" title="${task.isCompleted ? '重新激活任务' : '标记为完成'}">
+                                <i class="fa ${task.isCompleted ? 'fa-refresh' : 'fa-check-square-o'}"></i>
+                            </button>
+                            <button class="text-danger hover:text-red-700 transition-colors duration-300" onclick="deleteTask(${task.id})" title="删除任务">
+                                <i class="fa fa-trash-o"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-secondary h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">${progress}%</div>
+                    </div>
+                `;
+                
+                // 添加任务状态类
+                if (task.isCompleted) {
+                    taskElement.classList.add('opacity-70', 'bg-gray-50');
+                } else if (task.isActive) {
+                    taskElement.classList.add('border-primary');
+                } else {
+                    taskElement.classList.add('border-transparent');
+                }
+                
+                tasksContainer.appendChild(taskElement);
+            });
+        }
+        
+        // 渲染番茄记录
+        function renderRecords() {
+            recordsContainer.innerHTML = '';
+            
+            if (records.length === 0) {
+                noRecordsMessage.classList.remove('hidden');
+                recordsContainer.appendChild(noRecordsMessage);
+                return;
+            }
+            
+            noRecordsMessage.classList.add('hidden');
+            
+            // 按时间倒序排列
+            const sortedRecords = [...records].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            sortedRecords.forEach(record => {
+                const date = new Date(record.timestamp);
+                const timeString = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                const dateString = date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+                
+                const recordElement = document.createElement('div');
+                recordElement.className = 'bg-white rounded-lg p-3 shadow-sm flex items-center';
+                
+                recordElement.innerHTML = `
+                    <div class="bg-secondary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <div class="font-medium">${record.taskName}</div>
+                        <div class="text-xs text-gray-500">${dateString} ${timeString}</div>
+                    </div>
+                `;
+                
+                recordsContainer.appendChild(recordElement);
+            });
+        }
+        
+
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 设置通知类型
+            switch (type) {
+                case 'success':
+                    notificationIcon.className = 'fa fa-check-circle text-secondary mr-3 text-xl';
+                    break;
+                case 'warning':
+                    notificationIcon.className = 'fa fa-exclamation-circle text-accent mr-3 text-xl';
+                    break;
+                case 'error':
+                    notificationIcon.className = 'fa fa-times-circle text-danger mr-3 text-xl';
+                    break;
+                default:
+                    notificationIcon.className = 'fa fa-info-circle text-primary mr-3 text-xl';
+            }
+            
+            // 设置消息
+            notificationMessage.textContent = message;
+            
+            // 显示通知
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('pomodoro-tasks', JSON.stringify(tasks));
+            localStorage.setItem('pomodoro-records', JSON.stringify(records));
+        }
+        
+        // 从本地存储加载数据
+        function loadData() {
+            const savedTasks = localStorage.getItem('pomodoro-tasks');
+            const savedRecords = localStorage.getItem('pomodoro-records');
+            
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+                // 找到当前活动的任务
+                currentTask = tasks.find(task => task.isActive);
+                
+                if (currentTask) {
+                    currentTaskElement.innerHTML = `<p class="text-lg font-medium">${currentTask.name}</p>
+                                                   <p class="text-sm text-gray-500">${currentTask.completedPomodoros}/${currentTask.plannedPomodoros} 番茄</p>`;
+                }
+            }
+            
+            if (savedRecords) {
+                records = JSON.parse(savedRecords);
+            }
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
