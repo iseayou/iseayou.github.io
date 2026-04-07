@@ -228,6 +228,7 @@
         let currentTask = null;
         let tasks = [];
         let records = [];
+        let sessionStartTime = null; // 当前番茄会话开始时间
         
         // 初始化应用
         function initApp() {
@@ -273,6 +274,7 @@
                 // 新的番茄开始
                 isWorkSession = true;
                 currentTime = workDuration;
+                sessionStartTime = new Date().toISOString();
                 timerStatus.textContent = '工作中...';
                 updateProgressRing();
             }
@@ -306,6 +308,7 @@
                 clearInterval(timer);
                 timer = null;
                 isPaused = true;
+                sessionStartTime = null;
                 timerStatus.textContent = '已暂停';
                 
                 // 更新UI
@@ -325,6 +328,7 @@
             isPaused = false;
             isWorkSession = true;
             currentTime = workDuration;
+            sessionStartTime = null;
             timerStatus.textContent = '准备开始';
             updateTimerDisplay();
             updateProgressRing();
@@ -349,11 +353,13 @@
             
             // 记录完成的番茄
             if (currentTask) {
+                const endTime = new Date().toISOString();
                 const record = {
                     id: Date.now(),
                     taskId: currentTask.id,
                     taskName: currentTask.name,
-                    timestamp: new Date().toISOString(),
+                    startTime: sessionStartTime,
+                    endTime: endTime,
                     completed: true
                 };
                 
@@ -365,6 +371,8 @@
                 
                 showNotification(`恭喜！完成一个番茄 🍅`, 'success');
             }
+            
+            sessionStartTime = null;
             
             // 开始休息
             isWorkSession = false;
@@ -607,9 +615,23 @@
             
             const recordsText = records
                 .map(record => {
-                    const date = new Date(record.timestamp).toLocaleString('zh-CN');
-                    return `${date} - ${record.taskName}`;
+                    let startTime, endTime;
+                    
+                    if (record.startTime && record.endTime) {
+                        startTime = new Date(record.startTime);
+                        endTime = new Date(record.endTime);
+                    } else if (record.timestamp) {
+                        startTime = new Date(record.timestamp);
+                        endTime = new Date(new Date(record.timestamp).getTime() + 25 * 60 * 1000);
+                    } else {
+                        return '';
+                    }
+                    
+                    const startTimeStr = startTime.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const endTimeStr = endTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                    return `${startTimeStr} - ${endTimeStr} | ${record.taskName}`;
                 })
+                .filter(text => text)
                 .join('\n');
             
             navigator.clipboard.writeText(recordsText)
@@ -711,12 +733,28 @@
             noRecordsMessage.classList.add('hidden');
             
             // 按时间倒序排列
-            const sortedRecords = [...records].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const sortedRecords = [...records].sort((a, b) => {
+                const timeA = a.startTime || a.timestamp;
+                const timeB = b.startTime || b.timestamp;
+                return new Date(timeB) - new Date(timeA);
+            });
             
             sortedRecords.forEach(record => {
-                const date = new Date(record.timestamp);
-                const timeString = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                const dateString = date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+                let startTime, endTime;
+                
+                if (record.startTime && record.endTime) {
+                    startTime = new Date(record.startTime);
+                    endTime = new Date(record.endTime);
+                } else if (record.timestamp) {
+                    startTime = new Date(record.timestamp);
+                    endTime = new Date(new Date(record.timestamp).getTime() + 25 * 60 * 1000);
+                } else {
+                    return;
+                }
+                
+                const startTimeStr = startTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                const endTimeStr = endTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                const dateString = startTime.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
                 
                 const recordElement = document.createElement('div');
                 recordElement.className = 'bg-white rounded-lg p-3 shadow-sm flex items-center';
@@ -727,7 +765,7 @@
                     </div>
                     <div class="flex-grow">
                         <div class="font-medium">${record.taskName}</div>
-                        <div class="text-xs text-gray-500">${dateString} ${timeString}</div>
+                        <div class="text-xs text-gray-500">${dateString} ${startTimeStr} - ${endTimeStr}</div>
                     </div>
                 `;
                 
