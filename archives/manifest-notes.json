@@ -1,0 +1,47 @@
+{
+  "name": "本地笔记记录",
+  "short_name": "笔记",
+  "description": "一个简单的本地笔记记录应用",
+  "start_url": "/notenew.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#94a3b8",
+  "icons": [
+    {
+      "src": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=note%20app%20icon%20simple%20flat%20design%20gray%20color&image_size=square",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=note%20app%20icon%20simple%20flat%20design%20gray%20color&image_size=square",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=note%20app%20icon%20simple%20flat%20design%20gray%20color%20transparent%20background&image_size=square",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "新建笔记",
+      "short_name": "新建",
+      "description": "创建新笔记",
+      "url": "/notenew.html?action=new",
+      "icons": [{ "src": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=new%20note%20icon%20simple%20flat%20design%20gray%20color&image_size=square", "sizes": "192x192" }]
+    },
+    {
+      "name": "查看笔记",
+      "short_name": "查看",
+      "description": "查看所有笔记",
+      "url": "/notenew.html?action=view",
+      "icons": [{ "src": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=view%20notes%20icon%20simple%20flat%20design%20gray%20color&image_size=square", "sizes": "192x192" }]
+    }
+  ]
+}
