@@ -294,9 +294,7 @@
                 
                 // 遍历排序后的笔记
                 sortedNotes.forEach((note) => {
-                    const date = new Date(note.timestamp);
-                    const formattedDate = formatDateTime(date);
-                    markdownContent += `${formattedDate}：${note.content}\n\n`;
+                    markdownContent += `${note.content}\n\n`;
                 });
                 
                 // 复制到剪贴板
