@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>提词器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e3a8a',
+                        secondary: '#3b82f6',
+                        accent: '#60a5fa',
+                        dark: '#0f172a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scroll-container {
+                scroll-behavior: smooth;
+            }
+            .no-select {
+                user-select: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+            }
+            .line-focus {
+                background-color: rgba(59, 130, 246, 0.1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white min-h-screen flex flex-col">
+    <div id="configPanel" class="flex-1 flex flex-col p-4 md:p-8 max-w-4xl mx-auto w-full">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 text-secondary">提词器</h1>
+        
+        <div class="space-y-6">
+            <div>
+                <label class="block text-lg font-medium mb-2 text-accent">输入文字内容</label>
+                <textarea 
+                    id="textInput" 
+                    class="w-full h-48 p-4 bg-slate-800 border border-slate-600 rounded-lg text-white text-lg resize-none focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/50"
+                    placeholder="请输入要显示的文字内容..."
+                ></textarea>
+            </div>
+
+            <div>
+                <label class="block text-lg font-medium mb-2 text-accent">字号: <span id="fontSizeValue">36</span> px</label>
+                <input 
+                    type="range" 
+                    id="fontSizeSlider" 
+                    min="20" 
+                    max="120" 
+                    value="36" 
+                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
+                >
+                <div class="flex justify-between text-sm text-slate-400 mt-1">
+                    <span>20px</span>
+                    <span>120px</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-lg font-medium mb-2 text-accent">滚动速度: <span id="speedValue">0.4</span> px/帧</label>
+                <input 
+                    type="range" 
+                    id="speedSlider" 
+                    min="0.1" 
+                    max="2" 
+                    step="0.05" 
+                    value="0.4" 
+                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
+                >
+                <div class="flex justify-between text-sm text-slate-400 mt-1">
+                    <span>慢速</span>
+                    <span>快速</span>
+                </div>
+            </div>
+
+            <button 
+                id="startBtn" 
+                class="w-full py-4 bg-secondary hover:bg-accent text-white text-xl font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+                开始提词
+            </button>
+        </div>
+
+        <div class="mt-8 text-center text-slate-500 text-sm">
+            <p>提示：开始后可以使用空格键暂停/继续，Esc键返回配置</p>
+        </div>
+    </div>
+
+    <div id="displayPanel" class="hidden fixed inset-0 bg-black flex flex-col">
+        <div class="flex justify-between items-center px-4 py-3 bg-slate-900/80 backdrop-blur-sm">
+            <div class="flex items-center space-x-4">
+                <span class="text-slate-300">字号: <span id="displayFontSize">36</span>px</span>
+                <span class="text-slate-300">速度: <span id="displaySpeed">0.4</span></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="pauseBtn" class="px-4 py-2 bg-secondary hover:bg-accent text-white rounded-lg transition-colors">
+                    <span id="pauseIcon">⏸</span>
+                </button>
+                <button id="restartBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors">
+                    重新
+                </button>
+                <button id="exitBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+                    退出
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 relative overflow-hidden bg-black">
+            <div class="absolute inset-x-0 top-1/2 h-32 -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-900/20 to-transparent pointer-events-none"></div>
+            
+            <div id="scrollWrapper" class="absolute inset-0">
+                <div id="textContainer" class="w-full px-4 md:px-16 lg:px-32 py-16 text-center leading-relaxed">
+                    <div id="scrollText" class="no-select"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4 py-3 bg-slate-900/80 backdrop-blur-sm text-center text-slate-500 text-sm">
+            空格键: 暂停/继续 | Esc: 返回 | ↑↓: 调整
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const configPanel = document.getElementById('configPanel');
+            const displayPanel = document.getElementById('displayPanel');
+            const textInput = document.getElementById('textInput');
+            const fontSizeSlider = document.getElementById('fontSizeSlider');
+            const speedSlider = document.getElementById('speedSlider');
+            const fontSizeValue = document.getElementById('fontSizeValue');
+            const speedValue = document.getElementById('speedValue');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const exitBtn = document.getElementById('exitBtn');
+            const scrollText = document.getElementById('scrollText');
+            const scrollWrapper = document.getElementById('scrollWrapper');
+            const displayFontSize = document.getElementById('displayFontSize');
+            const displaySpeed = document.getElementById('displaySpeed');
+            const pauseIcon = document.getElementById('pauseIcon');
+
+            let fontSize = 48;
+            let speed = 1.5;
+            let isPaused = false;
+            let scrollPosition = 0;
+            let animationId = null;
+            let textLines = [];
+
+            fontSizeSlider.addEventListener('input', (e) => {
+                fontSize = parseInt(e.target.value);
+                fontSizeValue.textContent = fontSize;
+            });
+
+            speedSlider.addEventListener('input', (e) => {
+                speed = parseFloat(e.target.value);
+                speedValue.textContent = speed;
+            });
+
+            startBtn.addEventListener('click', startTeleprompter);
+
+            pauseBtn.addEventListener('click', togglePause);
+
+            restartBtn.addEventListener('click', restartTeleprompter);
+
+            exitBtn.addEventListener('click', exitTeleprompter);
+
+            document.addEventListener('keydown', (e) => {
+                if (displayPanel.classList.contains('hidden')) return;
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePause();
+                } else if (e.code === 'Escape') {
+                    exitTeleprompter();
+                } else if (e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    speed = Math.min(10, speed + 0.1);
+                    speedValue.textContent = speed.toFixed(1);
+                    displaySpeed.textContent = speed.toFixed(1);
+                } else if (e.code === 'ArrowDown') {
+                    e.preventDefault();
+                    speed = Math.max(0.1, speed - 0.1);
+                    speedValue.textContent = speed.toFixed(1);
+                    displaySpeed.textContent = speed.toFixed(1);
+                }
+            });
+
+            function startTeleprompter() {
+                const text = textInput.value.trim();
+                if (!text) {
+                    alert('请输入文字内容');
+                    return;
+                }
+
+                textLines = text.split('\n');
+                fontSize = parseInt(fontSizeSlider.value);
+                speed = parseFloat(speedSlider.value);
+
+                displayFontSize.textContent = fontSize;
+                displaySpeed.textContent = speed;
+
+                renderText();
+
+                configPanel.classList.add('hidden');
+                displayPanel.classList.remove('hidden');
+
+                setTimeout(() => {
+                    scrollPosition = 0;
+                    scrollWrapper.style.transform = 'translateY(0)';
+                    isPaused = false;
+                    pauseIcon.textContent = '⏸';
+                    startScrolling();
+                }, 100);
+            }
+
+            function renderText() {
+                scrollText.innerHTML = '';
+                textLines.forEach((line, index) => {
+                    const p = document.createElement('p');
+                    p.textContent = line || ' ';
+                    p.style.fontSize = `${fontSize}px`;
+                    p.style.lineHeight = '1.6';
+                    p.style.marginBottom = '0.5em';
+                    p.style.color = '#ffffff';
+                    p.id = `line-${index}`;
+                    scrollText.appendChild(p);
+                });
+            }
+
+            function startScrolling() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+
+                function animate() {
+                    if (!isPaused) {
+                        scrollPosition += speed;
+                        scrollWrapper.style.transform = `translateY(${-scrollPosition}px)`;
+                        
+                        const maxScroll = scrollText.offsetHeight - scrollWrapper.offsetHeight;
+                        if (scrollPosition >= maxScroll) {
+                            scrollPosition = maxScroll;
+                            scrollWrapper.style.transform = `translateY(${-scrollPosition}px)`;
+                            pauseIcon.textContent = '✓';
+                            isPaused = true;
+                        }
+                    }
+                    animationId = requestAnimationFrame(animate);
+                }
+
+                animate();
+            }
+
+            function togglePause() {
+                isPaused = !isPaused;
+                pauseIcon.textContent = isPaused ? '▶' : '⏸';
+            }
+
+            function restartTeleprompter() {
+                scrollPosition = 0;
+                isPaused = false;
+                pauseIcon.textContent = '⏸';
+                scrollWrapper.style.transform = 'translateY(0)';
+                startScrolling();
+            }
+
+            function exitTeleprompter() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                displayPanel.classList.add('hidden');
+                configPanel.classList.remove('hidden');
+            }
+
+            window.addEventListener('resize', () => {
+                if (!displayPanel.classList.contains('hidden')) {
+                    renderText();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
