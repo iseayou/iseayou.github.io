@@ -54,13 +54,13 @@
             </div>
 
             <div>
-                <label class="block text-lg font-medium mb-2 text-accent">字号: <span id="fontSizeValue">48</span> px</label>
+                <label class="block text-lg font-medium mb-2 text-accent">字号: <span id="fontSizeValue">40</span> px</label>
                 <input 
                     type="range" 
                     id="fontSizeSlider" 
                     min="20" 
                     max="120" 
-                    value="48" 
+                    value="40" 
                     class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
                 >
                 <div class="flex justify-between text-sm text-slate-400 mt-1">
@@ -70,14 +70,14 @@
             </div>
 
             <div>
-                <label class="block text-lg font-medium mb-2 text-accent">滚动速度: <span id="speedValue">0.5</span> px/帧</label>
+                <label class="block text-lg font-medium mb-2 text-accent">滚动速度: <span id="speedValue">0.4</span> px/帧</label>
                 <input 
                     type="range" 
                     id="speedSlider" 
                     min="0.1" 
-                    max="10" 
-                    step="0.1" 
-                    value="0.5" 
+                    max="2" 
+                    step="0.05" 
+                    value="0.4" 
                     class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
                 >
                 <div class="flex justify-between text-sm text-slate-400 mt-1">
@@ -102,8 +102,8 @@
     <div id="displayPanel" class="hidden fixed inset-0 bg-black flex flex-col">
         <div class="flex justify-between items-center px-4 py-3 bg-slate-900/80 backdrop-blur-sm">
             <div class="flex items-center space-x-4">
-                <span class="text-slate-300">字号: <span id="displayFontSize">48</span>px</span>
-                <span class="text-slate-300">速度: <span id="displaySpeed">0.5</span></span>
+                <span class="text-slate-300">字号: <span id="displayFontSize">36</span>px</span>
+                <span class="text-slate-300">速度: <span id="displaySpeed">0.4</span></span>
             </div>
             <div class="flex items-center space-x-3">
                 <button id="pauseBtn" class="px-4 py-2 bg-secondary hover:bg-accent text-white rounded-lg transition-colors">
@@ -129,7 +129,7 @@
         </div>
 
         <div class="px-4 py-3 bg-slate-900/80 backdrop-blur-sm text-center text-slate-500 text-sm">
-            空格键: 暂停/继续 | Esc: 返回配置 | ↑↓: 调整速度
+            空格键: 暂停/继续 | Esc: 返回 | ↑↓: 调整
         </div>
     </div>
 
