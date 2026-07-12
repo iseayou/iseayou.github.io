@@ -100,7 +100,7 @@
     </div>
 
     <div id="displayPanel" class="hidden fixed inset-0 bg-black flex flex-col">
-        <div class="flex justify-between items-center px-4 py-3 bg-slate-900/80 backdrop-blur-sm">
+        <div id="topBar" class="flex justify-between items-center px-4 py-3 bg-slate-900/80 backdrop-blur-sm">
             <div class="flex items-center space-x-4">
                 <span class="text-slate-300">字号: <span id="displayFontSize">36</span>px</span>
                 <span class="text-slate-300">速度: <span id="displaySpeed">0.4</span></span>
@@ -128,7 +128,7 @@
             </div>
         </div>
 
-        <div class="px-4 py-3 bg-slate-900/80 backdrop-blur-sm text-center text-slate-500 text-sm">
+        <div id="bottomBar" class="px-4 py-3 bg-slate-900/80 backdrop-blur-sm text-center text-slate-500 text-sm">
             空格键: 暂停/继续 | Esc: 返回 | ↑↓: 调整
         </div>
     </div>
@@ -151,6 +151,8 @@
             const displayFontSize = document.getElementById('displayFontSize');
             const displaySpeed = document.getElementById('displaySpeed');
             const pauseIcon = document.getElementById('pauseIcon');
+            const topBar = document.getElementById('topBar');
+            const bottomBar = document.getElementById('bottomBar');
 
             let fontSize = 48;
             let speed = 1.5;
@@ -222,6 +224,8 @@
                     scrollWrapper.style.transform = 'translateY(0)';
                     isPaused = false;
                     pauseIcon.textContent = '⏸';
+                    topBar.style.display = 'none';
+                    bottomBar.style.display = 'none';
                     startScrolling();
                 }, 100);
             }
@@ -282,6 +286,8 @@
                     cancelAnimationFrame(animationId);
                     animationId = null;
                 }
+                topBar.style.display = 'flex';
+                bottomBar.style.display = 'block';
                 displayPanel.classList.add('hidden');
                 configPanel.classList.remove('hidden');
             }
