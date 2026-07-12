@@ -70,14 +70,14 @@
             </div>
 
             <div>
-                <label class="block text-lg font-medium mb-2 text-accent">滚动速度: <span id="speedValue">1.5</span> px/帧</label>
+                <label class="block text-lg font-medium mb-2 text-accent">滚动速度: <span id="speedValue">0.5</span> px/帧</label>
                 <input 
                     type="range" 
                     id="speedSlider" 
                     min="0.1" 
                     max="10" 
                     step="0.1" 
-                    value="1.5" 
+                    value="0.5" 
                     class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
                 >
                 <div class="flex justify-between text-sm text-slate-400 mt-1">
@@ -103,17 +103,17 @@
         <div class="flex justify-between items-center px-4 py-3 bg-slate-900/80 backdrop-blur-sm">
             <div class="flex items-center space-x-4">
                 <span class="text-slate-300">字号: <span id="displayFontSize">48</span>px</span>
-                <span class="text-slate-300">速度: <span id="displaySpeed">1.5</span></span>
+                <span class="text-slate-300">速度: <span id="displaySpeed">0.5</span></span>
             </div>
             <div class="flex items-center space-x-3">
                 <button id="pauseBtn" class="px-4 py-2 bg-secondary hover:bg-accent text-white rounded-lg transition-colors">
                     <span id="pauseIcon">⏸</span>
                 </button>
                 <button id="restartBtn" class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors">
-                    🔄 重新开始
+                    重新
                 </button>
                 <button id="exitBtn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
-                    ✕ 退出
+                    退出
                 </button>
             </div>
         </div>
